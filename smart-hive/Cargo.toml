@@ -1,0 +1,11 @@
+[package]
+name = "smart-hive"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+software-defined-hive = { path = "../software-defined-hive" }
+hardware-abstraction = { path = "../hardware-abstraction" }
+esp-idf-svc = "0.51.0"
+esp-idf-hal = "0.45.2"
+esp-idf-sys = "*"

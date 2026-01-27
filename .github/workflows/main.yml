@@ -1,0 +1,46 @@
+name: Build ESP32 Firmware
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout the repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Install Rust + espup
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal
+
+      - name: Install ESP32 Rust targets with espup
+        run: |
+          cargo install espup --force
+          espup install
+
+      # 3️⃣ Add ESP32 target (example for classic ESP32)
+      - name: Add Rust target
+        run: rustup target add xtensa-esp32-none-elf
+
+      # 4️⃣ Build the project
+      - name: Build ESP32 firmware
+        run: |
+          cargo build --release --target xtensa-esp32-none-elf
+
+      # 5️⃣ Archive the firmware
+      - name: Archive firmware artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: esp32-firmware
+          path: target/xtensa-esp32-none-elf/release/*.elf

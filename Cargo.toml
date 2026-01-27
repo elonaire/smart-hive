@@ -1,0 +1,17 @@
+[workspace]
+resolver = "2"
+members = [
+    # Software-defined product (SDP) lib
+    "software-defined-hive",
+    # Hardware Abstraction Layer (HAL) lib
+    "hardware-abstraction",
+    # Smart Hive (SDP + HAL)
+    "smart-hive",
+]
+
+[profile.release]
+strip = true      # Automatically strip symbols from the binary.
+opt-level = 'z'   # Optimize for size
+lto = true        # Enable link-time optimization
+codegen-units = 1 # Reduce number of codegen units to increase optimizations
+panic = 'abort'   # Abort on panic
