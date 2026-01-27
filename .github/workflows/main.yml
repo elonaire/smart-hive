@@ -31,12 +31,12 @@ jobs:
 
       # 3️⃣ Add ESP32 target (example for classic ESP32)
       - name: Add Rust target
-        run: rustup target add xtensa-esp32-none-elf
+        run: rustup target add xtensa-esp32-espidf
 
       # 4️⃣ Build the project
       - name: Build ESP32 firmware
         run: |
-          cargo build --release --target xtensa-esp32-none-elf
+          cargo build --release --target xtensa-esp32-espidf
 
       # 5️⃣ Archive the firmware
       - name: Archive firmware artifact
