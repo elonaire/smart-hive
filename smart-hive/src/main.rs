@@ -1,10 +1,10 @@
 use esp_idf_hal::prelude::*;
-use esp_idf_hal::gpio::*;
+// use esp_idf_hal::gpio::*;
 use esp_idf_hal::ledc::*;
 use esp_idf_svc::mqtt::client::{EspMqttClient as MqttClient, MqttClientConfiguration};
-use esp_idf_svc::netif::*;
+// use esp_idf_svc::netif::*;
 use esp_idf_svc::wifi::*;
-use esp_idf_sys as _; // ESP-IDF runtime
+// use esp_idf_sys as _; // ESP-IDF runtime
 use std::time::Duration;
 use std::{env, thread};
 use esp_idf_svc::eventloop::EspSystemEventLoop;
@@ -72,7 +72,7 @@ fn main() -> ! {
     };
 
     let (mut mqtt_client, mut connection) =
-        MqttClient::new("mqtt://broker.hivemq.com:1883", &mqtt_config).unwrap();
+        MqttClient::new("mqtt://host.wokwi.internal:1883", &mqtt_config).unwrap();
 
     mqtt_client.subscribe("hive/actuator/command", 1).unwrap();
     println!("Subscribed to MQTT topic: hive/actuator/command");

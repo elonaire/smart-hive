@@ -2,3 +2,11 @@
 version = 1
 firmware = 'esp32-mini-1/flasher_args.json'
 elf = 'esp32-mini-1/esp-at.elf'
+
+[net]
+gateway = "private"
+
+# Expose ESP32 services to host
+[[net.forward]]
+from = "localhost:1883"
+to = "target:1883"

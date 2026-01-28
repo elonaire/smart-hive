@@ -1,4 +1,4 @@
-name: Build ESP32 Firmware
+name: Build Smart Hive ESP32 Firmware
 
 on:
   push:
@@ -12,35 +12,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout the repo
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
-      # 2️⃣ Install Rust + espup
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-          profile: minimal
-
-      - name: Install ESP32 Rust targets with espup
+      # Install system dependencies required by ESP-IDF
+      - name: Install system dependencies
         run: |
-          cargo install espup --force
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            ninja-build \
+            libclang-dev \
+            clang \
+            gcc \
+            git \
+            curl \
+            python3 \
+            python3-pip
+
+      # Install espup (ESP-RS toolchain manager)
+      - name: Install espup
+        run: |
+          cargo install espup --locked
           espup install
 
-      # 3️⃣ Add ESP32 target (example for classic ESP32)
-      - name: Add Rust target
-        run: rustup target add xtensa-esp32-espidf
+      # Load ESP environment (Xtensa toolchain, Rust fork, etc.)
+      - name: Source ESP environment
+        run: |
+          source $HOME/export-esp.sh
+          echo "ESP_PATH=$HOME/.espressif" >> $GITHUB_ENV
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-      # 4️⃣ Build the project
+      # Build firmware
       - name: Build ESP32 firmware
         run: |
-          cargo build --release --target xtensa-esp32-espidf
+          source $HOME/export-esp.sh
+          cargo build --release
 
-      # 5️⃣ Archive the firmware
-      - name: Archive firmware artifact
-        uses: actions/upload-artifact@v6
+      # Archive firmware artifact
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: esp32-firmware
-          path: target/xtensa-esp32-none-elf/release/*.elf
+          name: smart-hive-firmware
+          path: target/**/release/*.elf
