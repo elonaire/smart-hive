@@ -6,6 +6,6 @@ edition = "2024"
 [dependencies]
 software-defined-hive = { path = "../software-defined-hive" }
 hardware-abstraction = { path = "../hardware-abstraction" }
-esp-idf-svc = "0.48"
-esp-idf-hal = "0.43"
-esp-idf-sys = "0.34"
+esp-idf-svc = { version = "0.49", default-features = false }
+esp-idf-hal = "0.44"
+esp-idf-sys = { version = "0.35" }
