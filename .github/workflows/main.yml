@@ -43,11 +43,15 @@ jobs:
           echo "ESP_PATH=$HOME/.espressif" >> $GITHUB_ENV
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
+      - name: Force ESP target
+        run: |
+          echo "CARGO_BUILD_TARGET=xtensa-esp32-espidf" >> $GITHUB_ENV
+
       # Build firmware
       - name: Build ESP32 firmware
         run: |
           source $HOME/export-esp.sh
-          cargo build --release
+          cargo build --release -p smart-hive
 
       # Archive firmware artifact
       - name: Upload firmware artifact
