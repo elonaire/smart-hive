@@ -23,14 +23,13 @@ jobs:
             cmake ninja-build ccache libffi-dev libssl-dev dfu-util \
             libusb-1.0-0 libudev-dev pkg-config
 
-      # Use the esp-rs action with specific version
+      # Use latest esp-rs action without version pin
       - name: Setup ESP-RS toolchain
         uses: esp-rs/xtensa-toolchain@v1.5
         with:
           default: true
           buildtargets: esp32
           ldproxy: true
-          version: "1.82.0"
 
       - name: Build firmware
         run: cargo build --release -p smart-hive
