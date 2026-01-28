@@ -39,7 +39,7 @@ jobs:
             libudev-dev \
             libssl-dev
 
-      # Install ldproxy (needed for linking)
+      # Install ldproxy
       - name: Install ldproxy
         run: cargo install ldproxy
 
@@ -49,12 +49,13 @@ jobs:
           cargo install espup --locked
           espup install
 
-      # Build firmware (source ESP env in same step)
+      # Build firmware with explicit target
       - name: Build ESP32 firmware
         run: |
           . $HOME/export-esp.sh
           cargo build --release --target xtensa-esp32-espidf -p smart-hive
-        shell: bash
+        env:
+          RUSTFLAGS: "-C link-arg=-Wl,--allow-multiple-definition"
 
       # Archive firmware artifact
       - name: Upload firmware artifact

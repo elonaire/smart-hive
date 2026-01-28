@@ -6,3 +6,4 @@ mcus-simulation/esp32-mini-1/at_customize.bin
 mcus-simulation/esp32-mini-1/esp-at.bin
 mcus-simulation/esp32-mini-1/esp-at.elf
 mcus-simulation/esp32-mini-1/ota_data_initial.bin
+/.embuild
