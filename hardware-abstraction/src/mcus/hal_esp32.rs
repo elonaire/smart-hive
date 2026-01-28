@@ -1,15 +1,15 @@
 use std::time::{Duration, Instant};
-use esp_idf_hal::gpio::{AnyInputPin, AnyOutputPin};
+use esp_idf_hal::gpio::{PinDriver, Input, Output, AnyIOPin};
 use esp_idf_hal::ledc::LedcDriver;
 use software_defined_hive::state::actuators::{HoneyCellDisplacerCommand, HoneyCellDisplacer, HoneyCellDisplacerFault};
 
 pub struct Esp32Actuator<'actuator_lifetime> {
     pwm: LedcDriver<'actuator_lifetime>,
-    dir_a: AnyOutputPin,
-    dir_b: AnyOutputPin,
-    limit_top: AnyInputPin,
-    limit_bottom: AnyInputPin,
-    max_move_duration: Duration, // safety timeout
+    dir_a: PinDriver<'actuator_lifetime, AnyIOPin, Output>,
+    dir_b: PinDriver<'actuator_lifetime, AnyIOPin, Output>,
+    limit_top: PinDriver<'actuator_lifetime, AnyIOPin, Input>,
+    limit_bottom: PinDriver<'actuator_lifetime, AnyIOPin, Input>,
+    max_move_duration: Duration,
 }
 
 impl HoneyCellDisplacer for Esp32Actuator<'_> {
@@ -25,10 +25,10 @@ impl HoneyCellDisplacer for Esp32Actuator<'_> {
 impl<'actuator_lifetime> Esp32Actuator<'actuator_lifetime> {
     pub fn new(
         pwm: LedcDriver<'actuator_lifetime>,
-        dir_a: AnyOutputPin,
-        dir_b: AnyOutputPin,
-        limit_top: AnyInputPin,
-        limit_bottom: AnyInputPin,
+        dir_a: PinDriver<'actuator_lifetime, AnyIOPin, Output>,
+        dir_b: PinDriver<'actuator_lifetime, AnyIOPin, Output>,
+        limit_top: PinDriver<'actuator_lifetime, AnyIOPin, Input>,
+        limit_bottom: PinDriver<'actuator_lifetime, AnyIOPin, Input>,
         max_move_duration: Duration,
     ) -> Self {
         Self {
@@ -44,18 +44,18 @@ impl<'actuator_lifetime> Esp32Actuator<'actuator_lifetime> {
     fn slide_up(&mut self) -> Result<(), HoneyCellDisplacerFault> {
         self.set_direction_up()?;
         self.enable_motion()?;
-        self.wait_until_limit(self.limit_top)?;
+        self.wait_until_limit(&self.limit_top)?;
         self.stop()?;
         Ok(())
     }
 
     fn slide_down(&mut self) -> Result<(), HoneyCellDisplacerFault> {
-        if self.limit_top.is_low() {
+        if self.limit_bottom.is_low() {
             return Err(HoneyCellDisplacerFault::EndStopHit);
         }
 
-        self.dir_a.set_low().ok();
-        self.dir_b.set_high().ok();
+        self.dir_a.set_low().map_err(|_| HoneyCellDisplacerFault::Hardware)?;
+        self.dir_b.set_high().map_err(|_| HoneyCellDisplacerFault::Hardware)?;
 
         Ok(())
     }
@@ -65,10 +65,8 @@ impl<'actuator_lifetime> Esp32Actuator<'actuator_lifetime> {
         Ok(())
     }
 
-    /// Homing routine: moves down until bottom switch is hit
     pub fn home(&mut self) -> Result<(), HoneyCellDisplacerFault> {
         self.slide_down()?;
-        // after hitting bottom switch, actuator is at known zero
         Ok(())
     }
 
@@ -81,7 +79,6 @@ impl<'actuator_lifetime> Esp32Actuator<'actuator_lifetime> {
         let _ = self.pwm.set_duty(0);
     }
 
-    /// Set motor direction to up
     fn set_direction_up(&mut self) -> Result<(), HoneyCellDisplacerFault> {
         if self.limit_top.is_low() {
             return Err(HoneyCellDisplacerFault::EndStopHit);
@@ -91,7 +88,6 @@ impl<'actuator_lifetime> Esp32Actuator<'actuator_lifetime> {
         Ok(())
     }
 
-    /// Set motor direction to down
     fn set_direction_down(&mut self) -> Result<(), HoneyCellDisplacerFault> {
         if self.limit_bottom.is_low() {
             return Err(HoneyCellDisplacerFault::EndStopHit);
@@ -101,10 +97,9 @@ impl<'actuator_lifetime> Esp32Actuator<'actuator_lifetime> {
         Ok(())
     }
 
-    /// Wait until a limit switch triggers or timeout occurs
-    fn wait_until_limit(&self, limit: AnyInputPin) -> Result<(), HoneyCellDisplacerFault> {
+    fn wait_until_limit(&self, limit: &PinDriver<'actuator_lifetime, AnyIOPin, Input>) -> Result<(), HoneyCellDisplacerFault> {
         let start = Instant::now();
-        while limit.is_high().unwrap_or(false) {
+        while limit.is_high() {
             if start.elapsed() > self.max_move_duration {
                 return Err(HoneyCellDisplacerFault::Timeout);
             }
@@ -112,4 +107,3 @@ impl<'actuator_lifetime> Esp32Actuator<'actuator_lifetime> {
         Ok(())
     }
 }
-
