@@ -30,7 +30,7 @@ jobs:
           default: true
           buildtargets: esp32
           ldproxy: true
-          version: "1.75.0"
+          version: "1.82.0"
 
       - name: Build firmware
         run: cargo build --release -p smart-hive
