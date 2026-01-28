@@ -5,4 +5,4 @@ edition = "2021"
 
 [dependencies]
 software-defined-hive = { path = "../software-defined-hive" }
-esp-idf-hal = "0.44"
+esp-idf-hal = "0.45"

@@ -30,6 +30,12 @@ jobs:
           default: true
           buildtargets: esp32
           ldproxy: true
+          espidf: v5.1.2
+
+
+      - name: Set ESP-IDF version
+        run: |
+          echo "ESP_IDF_VERSION=v5.1.2" >> $GITHUB_ENV
 
       - name: Build firmware
         run: cargo build --release -p smart-hive
