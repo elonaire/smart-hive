@@ -9,5 +9,5 @@ runner = "espflash flash --monitor"
 build-std = ["std", "panic_abort"]
 
 [env]
-ESP_IDF_VERSION = { value = "v5.1" }
+ESP_IDF_VERSION = { value = "v5.1.2" }
 # Adjust this based on your actual ESP-IDF requirements
