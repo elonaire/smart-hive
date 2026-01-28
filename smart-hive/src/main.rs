@@ -1,17 +1,18 @@
-use esp_idf_hal::prelude::*;
 use esp_idf_hal::gpio::*;
 use esp_idf_hal::ledc::*;
+use esp_idf_hal::ledc::{
+    config::TimerConfig, LedcChannel, LedcDriver, LedcTimer, LedcTimerDriver, Resolution,
+};
+use esp_idf_hal::prelude::*;
+use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::mqtt::client::{EspMqttClient as MqttClient, MqttClientConfiguration};
 use esp_idf_svc::netif::*;
 use esp_idf_svc::wifi::*;
 use esp_idf_sys as _; // ESP-IDF runtime
+use hardware_abstraction::mcus::hal_esp32::Esp32Actuator;
+use software_defined_hive::state::actuators::{HoneyCellDisplacer, HoneyCellDisplacerCommand};
 use std::time::Duration;
 use std::{env, thread};
-use esp_idf_svc::eventloop::EspSystemEventLoop;
-use software_defined_hive::state::actuators::{HoneyCellDisplacerCommand, HoneyCellDisplacer};
-use hardware_abstraction::mcus::hal_esp32::Esp32Actuator;
-use esp_idf_hal::ledc::{LedcDriver, LedcTimerDriver, LedcTimer, LedcChannel, Resolution};
-use esp_idf_hal::timer::TimerConfig;
 
 fn main() -> ! {
     // Initialize ESP-IDF runtime
@@ -22,31 +23,33 @@ fn main() -> ! {
     let sysloop = EspSystemEventLoop::take().unwrap();
     let mut wifi = EspWifi::new(peripherals.modem, sysloop.clone()).unwrap();
 
-    let ssid = env::var("WIFI_SSID")
-        .expect("WIFI_SSID not set");
-    let password = env::var("WIFI_PASS")
-        .expect("WIFI_PASS not set");
+    let ssid = env::var("WIFI_SSID").expect("WIFI_SSID not set");
+    let password = env::var("WIFI_PASS").expect("WIFI_PASS not set");
 
     wifi.set_configuration(&Configuration::Client(ClientConfiguration {
         ssid,
         password,
         ..Default::default()
     }))
-        .unwrap();
+    .unwrap();
     wifi.start().unwrap();
     wifi.connect().unwrap();
 
     println!("Wi-Fi connected!");
 
     // Configure PWM / direction / limit switches
-    let timer_config = TimerConfig::default();
+    let timer_config = TimerConfig {
+        frequency: 5000.hz(),
+        resolution: Resolution::Bits10,
+    };
     let ledc_timer = LedcTimerDriver::new(peripherals.ledc.timer0, &timer_config).unwrap();
 
     let pwm_channel = LedcDriver::new(
         peripherals.ledc.channel0,
         &ledc_timer,
         peripherals.pins.gpio18,
-    ).unwrap();
+    )
+    .unwrap();
 
     let dir_a = peripherals.pins.gpio19.into_output().unwrap();
     let dir_b = peripherals.pins.gpio21.into_output().unwrap();
@@ -81,18 +84,18 @@ fn main() -> ! {
         // Check for incoming messages
         if let Ok(event) = connection.next() {
             if let Ok(payload_str) = std::str::from_utf8(event.payload()) {
-                    let command = match payload_str.trim() {
-                        "SlideUp" => HoneyCellDisplacerCommand::SlideUp,
-                        "SlideDown" => HoneyCellDisplacerCommand::SlideDown,
-                        "Stop" => HoneyCellDisplacerCommand::Stop,
-                        _ => {
-                            println!("Unknown command: {}", payload_str);
-                            continue;
-                        }
-                    };
+                let command = match payload_str.trim() {
+                    "SlideUp" => HoneyCellDisplacerCommand::SlideUp,
+                    "SlideDown" => HoneyCellDisplacerCommand::SlideDown,
+                    "Stop" => HoneyCellDisplacerCommand::Stop,
+                    _ => {
+                        println!("Unknown command: {}", payload_str);
+                        continue;
+                    }
+                };
 
-                    actuator.execute(command).ok();
-                    println!("Executed command via MQTT: {:?}", command);
+                actuator.execute(command).ok();
+                println!("Executed command via MQTT: {:?}", command);
             };
         }
 

@@ -1,8 +1,8 @@
 [package]
 name = "hardware-abstraction"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 software-defined-hive = { path = "../software-defined-hive" }
-esp-idf-hal = "0.45"
+esp-idf-hal = "*"
