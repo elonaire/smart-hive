@@ -15,44 +15,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Install system dependencies
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git \
-            wget \
-            flex \
-            bison \
-            gperf \
-            python3 \
-            python3-pip \
-            python3-venv \
-            cmake \
-            ninja-build \
-            ccache \
-            libffi-dev \
-            libssl-dev \
-            dfu-util \
-            libusb-1.0-0
+            git wget flex bison gperf python3 python3-pip python3-venv \
+            cmake ninja-build ccache libffi-dev libssl-dev dfu-util \
+            libusb-1.0-0 libudev-dev pkg-config
 
-      # Setup Rust with esp toolchain
-      - name: Setup Rust for ESP32
+      # Use the esp-rs action with specific version
+      - name: Setup ESP-RS toolchain
         uses: esp-rs/xtensa-toolchain@v1.5
         with:
           default: true
           buildtargets: esp32
           ldproxy: true
+          version: "1.75.0"
 
-      # Build firmware
-      - name: Build ESP32 firmware
+      - name: Build firmware
         run: cargo build --release -p smart-hive
 
-      # Archive firmware artifact
-      - name: Upload firmware artifact
+      - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
           name: smart-hive-firmware
           path: |
             target/xtensa-esp32-espidf/release/smart-hive
-            target/xtensa-esp32-espidf/release/*.bin
