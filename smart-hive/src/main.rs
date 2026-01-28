@@ -1,10 +1,10 @@
 use esp_idf_hal::prelude::*;
-// use esp_idf_hal::gpio::*;
+use esp_idf_hal::gpio::*;
 use esp_idf_hal::ledc::*;
 use esp_idf_svc::mqtt::client::{EspMqttClient as MqttClient, MqttClientConfiguration};
-// use esp_idf_svc::netif::*;
+use esp_idf_svc::netif::*;
 use esp_idf_svc::wifi::*;
-// use esp_idf_sys as _; // ESP-IDF runtime
+use esp_idf_sys as _; // ESP-IDF runtime
 use std::time::Duration;
 use std::{env, thread};
 use esp_idf_svc::eventloop::EspSystemEventLoop;
