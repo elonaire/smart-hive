@@ -15,47 +15,38 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Install Rust
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rust-src
-
       # Install system dependencies
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            cmake \
-            ninja-build \
-            libclang-dev \
-            clang \
-            gcc \
             git \
-            curl \
+            wget \
+            flex \
+            bison \
+            gperf \
             python3 \
             python3-pip \
             python3-venv \
-            libudev-dev \
-            libssl-dev
+            cmake \
+            ninja-build \
+            ccache \
+            libffi-dev \
+            libssl-dev \
+            dfu-util \
+            libusb-1.0-0
 
-      # Install ldproxy
-      - name: Install ldproxy
-        run: cargo install ldproxy
+      # Setup Rust with esp toolchain
+      - name: Setup Rust for ESP32
+        uses: esp-rs/xtensa-toolchain@v1.5
+        with:
+          default: true
+          buildtargets: esp32
+          ldproxy: true
 
-      # Install espup and setup ESP toolchain
-      - name: Setup ESP-RS toolchain
-        run: |
-          cargo install espup --locked
-          espup install
-
-      # Build firmware with explicit target
+      # Build firmware
       - name: Build ESP32 firmware
-        run: |
-          . $HOME/export-esp.sh
-          cargo build --release --target xtensa-esp32-espidf -p smart-hive
-        env:
-          RUSTFLAGS: "-C link-arg=-Wl,--allow-multiple-definition"
+        run: cargo build --release -p smart-hive
 
       # Archive firmware artifact
       - name: Upload firmware artifact
@@ -63,5 +54,5 @@ jobs:
         with:
           name: smart-hive-firmware
           path: |
-            target/xtensa-esp32-espidf/release/*.elf
+            target/xtensa-esp32-espidf/release/smart-hive
             target/xtensa-esp32-espidf/release/*.bin
