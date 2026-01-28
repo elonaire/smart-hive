@@ -1,13 +1,13 @@
 use esp_idf_hal::gpio::*;
 use esp_idf_hal::ledc::*;
 use esp_idf_hal::ledc::{
-    config::TimerConfig, LedcChannel, LedcDriver, LedcTimer, LedcTimerDriver, Resolution,
+    LedcChannel, LedcDriver, LedcTimer, LedcTimerDriver, Resolution, config::TimerConfig,
 };
 use esp_idf_hal::prelude::*;
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::mqtt::client::{EspMqttClient as MqttClient, MqttClientConfiguration};
 use esp_idf_svc::netif::*;
-use esp_idf_svc::wifi::*;
+// use esp_idf_svc::wifi::*;
 use esp_idf_sys as _; // ESP-IDF runtime
 use hardware_abstraction::mcus::hal_esp32::Esp32Actuator;
 use software_defined_hive::state::actuators::{HoneyCellDisplacer, HoneyCellDisplacerCommand};
@@ -20,26 +20,27 @@ fn main() -> ! {
 
     // Configure and connect to Wi-Fi
     let peripherals = Peripherals::take().unwrap();
-    let sysloop = EspSystemEventLoop::take().unwrap();
-    let mut wifi = EspWifi::new(peripherals.modem, sysloop.clone()).unwrap();
+    // let sysloop = EspSystemEventLoop::take().unwrap();
+    // let mut wifi = EspWifi::new(peripherals.modem, sysloop.clone()).unwrap();
+    // let mut wifi = EspWifi::new();
 
-    let ssid = env::var("WIFI_SSID").expect("WIFI_SSID not set");
-    let password = env::var("WIFI_PASS").expect("WIFI_PASS not set");
-
-    wifi.set_configuration(&Configuration::Client(ClientConfiguration {
-        ssid,
-        password,
-        ..Default::default()
-    }))
-    .unwrap();
-    wifi.start().unwrap();
-    wifi.connect().unwrap();
-
-    println!("Wi-Fi connected!");
+    // let ssid = env::var("WIFI_SSID").expect("WIFI_SSID not set");
+    // let password = env::var("WIFI_PASS").expect("WIFI_PASS not set");
+    //
+    // wifi.set_configuration(&Configuration::Client(ClientConfiguration {
+    //     ssid,
+    //     password,
+    //     ..Default::default()
+    // }))
+    // .unwrap();
+    // wifi.start().unwrap();
+    // wifi.connect().unwrap();
+    //
+    // println!("Wi-Fi connected!");
 
     // Configure PWM / direction / limit switches
     let timer_config = TimerConfig {
-        frequency: 5000.hz(),
+        frequency: Hertz::from(5000),
         resolution: Resolution::Bits10,
     };
     let ledc_timer = LedcTimerDriver::new(peripherals.ledc.timer0, &timer_config).unwrap();
