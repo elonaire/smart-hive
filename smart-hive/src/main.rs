@@ -84,7 +84,7 @@ fn main() -> ! {
     loop {
         // Check for incoming messages
         if let Ok(event) = connection.next() {
-            if let Ok(payload_str) = std::str::from_utf8(event.payload()) {
+            if let Ok(payload_str) = std::str::from_utf8(event.payload().to_string().as_bytes()) {
                 let command = match payload_str.trim() {
                     "SlideUp" => HoneyCellDisplacerCommand::SlideUp,
                     "SlideDown" => HoneyCellDisplacerCommand::SlideDown,
