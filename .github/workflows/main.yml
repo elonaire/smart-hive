@@ -15,7 +15,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Install system dependencies required by ESP-IDF
+      # Install Rust
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rust-src
+
+      # Install system dependencies
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -28,29 +34,25 @@ jobs:
             git \
             curl \
             python3 \
-            python3-pip
+            python3-pip \
+            python3-venv \
+            libudev-dev \
+            libssl-dev
 
-      # Install espup (ESP-RS toolchain manager)
-      - name: Install espup
+      # Install ldproxy (needed for linking)
+      - name: Install ldproxy
+        run: cargo install ldproxy
+
+      # Install espup and setup ESP toolchain
+      - name: Setup ESP-RS toolchain
         run: |
           cargo install espup --locked
           espup install
 
-      # Load ESP environment (Xtensa toolchain, Rust fork, etc.)
-      - name: Source ESP environment
-        run: |
-          source $HOME/export-esp.sh
-          echo "ESP_PATH=$HOME/.espressif" >> $GITHUB_ENV
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
-      - name: Force ESP target
-        run: |
-          echo "CARGO_BUILD_TARGET=xtensa-esp32-espidf" >> $GITHUB_ENV
-
-      # Build firmware
+      # Build firmware (source ESP env in same step)
       - name: Build ESP32 firmware
         run: |
-          source $HOME/export-esp.sh
+          . $HOME/export-esp.sh
           cargo build --release -p smart-hive
 
       # Archive firmware artifact
@@ -58,4 +60,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: smart-hive-firmware
-          path: target/**/release/*.elf
+          path: |
+            target/xtensa-esp32-espidf/release/*.elf
+            target/xtensa-esp32-espidf/release/*.bin
