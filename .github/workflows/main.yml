@@ -53,7 +53,8 @@ jobs:
       - name: Build ESP32 firmware
         run: |
           . $HOME/export-esp.sh
-          cargo build --release -p smart-hive
+          cargo build --release --target xtensa-esp32-espidf -p smart-hive
+        shell: bash
 
       # Archive firmware artifact
       - name: Upload firmware artifact
