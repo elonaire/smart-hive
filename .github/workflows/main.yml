@@ -19,22 +19,59 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git wget flex bison gperf python3 python3-pip python3-venv \
-            cmake ninja-build ccache libffi-dev libssl-dev dfu-util \
-            libusb-1.0-0 libudev-dev pkg-config
+            git \
+            wget \
+            flex \
+            bison \
+            gperf \
+            python3 \
+            python3-pip \
+            python3-venv \
+            cmake \
+            ninja-build \
+            ccache \
+            libffi-dev \
+            libssl-dev \
+            dfu-util \
+            libusb-1.0-0 \
+            libudev-dev \
+            pkg-config \
+            libclang-dev \
+            clang
 
-      - name: Setup ESP-RS toolchain
-        uses: esp-rs/xtensa-toolchain@v1.5
-        with:
-          default: true
-          version: "1.66.0"
-          ldproxy: true
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none
+          source $HOME/.cargo/env
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-      # This is the critical part - ensure PATH is set
-      - name: Verify toolchain
+      - name: Install espup
+        run: |
+          source $HOME/.cargo/env
+          cargo install espup --locked
+
+      - name: Install ESP Rust toolchain
+        run: |
+          source $HOME/.cargo/env
+          espup install --targets esp32
+
+      - name: Install ldproxy
+        run: |
+          source $HOME/.cargo/env
+          cargo install ldproxy
+
+      - name: Verify toolchain installation
         run: |
           source $HOME/export-esp.sh
-          which xtensa-esp32-elf-gcc || echo "GCC not found in PATH"
+          echo "=== Rust version ==="
+          rustc --version
+          echo "=== Cargo version ==="
+          cargo --version
+          echo "=== GCC location ==="
+          which xtensa-esp32-elf-gcc || echo "xtensa-esp32-elf-gcc not found"
+          echo "=== ldproxy location ==="
+          which ldproxy
+          echo "=== PATH ==="
           echo $PATH
 
       - name: Build firmware
@@ -43,9 +80,19 @@ jobs:
           cargo build --release -p smart-hive --verbose
         shell: bash
 
-      - name: Upload firmware
+      - name: List build artifacts
+        run: |
+          echo "=== Build directory contents ==="
+          ls -lah target/xtensa-esp32-espidf/release/ || echo "Release directory not found"
+          echo "=== Looking for binary ==="
+          find target -name "smart-hive" -o -name "smart_hive" -o -name "*.elf" -o -name "*.bin"
+
+      - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
           name: smart-hive-firmware
           path: |
             target/xtensa-esp32-espidf/release/smart-hive
+            target/xtensa-esp32-espidf/release/*.elf
+            target/xtensa-esp32-espidf/release/*.bin
+          if-no-files-found: warn
