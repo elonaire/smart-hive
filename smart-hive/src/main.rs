@@ -60,6 +60,7 @@ fn main() -> ! {
     //
     // mqtt_client.subscribe("hive/actuator/command", QoS::ExactlyOnce).unwrap();
     // println!("Subscribed to MQTT topic: hive/actuator/command");
+    println!("The Smart Hive is Online!");
 
     loop {
         // Check for incoming messages
