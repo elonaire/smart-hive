@@ -11,6 +11,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      WIFI_SSID: ${{ secrets.WIFI_SSID }}
+      WIFI_PASS: ${{ secrets.WIFI_PASS }}
+      MQTT_URL: ${{ secrets.MQTT_URL }}
+      MQTT_CLIENT_ID: ${{ secrets.MQTT_CLIENT_ID }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

@@ -9,12 +9,8 @@ use esp_idf_svc::wifi::*;
 
 use log::*;
 
-const SSID: &str = env!("WIFI_SSID");
-const PASSWORD: &str = env!("WIFI_PASS");
-
-const MQTT_URL: &str = "mqtt://broker.emqx.io:1883";
-const MQTT_CLIENT_ID: &str = "esp-mqtt-demo";
-const MQTT_TOPIC: &str = "esp-mqtt-demo";
+const WIFI_SSID: &str = env!("WIFI_SSID");
+const WIFI_PASS: &str = env!("WIFI_PASS");
 
 
 pub fn wifi_create(
@@ -27,8 +23,8 @@ pub fn wifi_create(
     let mut wifi = BlockingWifi::wrap(&mut esp_wifi, sys_loop.clone())?;
 
     wifi.set_configuration(&Configuration::Client(ClientConfiguration {
-        ssid: SSID.try_into().unwrap(),
-        password: PASSWORD.try_into().unwrap(),
+        ssid: WIFI_SSID.try_into().unwrap(),
+        password: WIFI_PASS.try_into().unwrap(),
         ..Default::default()
     }))?;
 

@@ -14,15 +14,15 @@ use hardware_abstraction::mcus::hal_esp32::Esp32Actuator;
 use software_defined_hive::state::actuators::{HoneyCellDisplacer, HoneyCellDisplacerCommand};
 use std::time::Duration;
 use std::thread;
-use crate::event_loop::event_loop::start_event_loop;
+use crate::event_loop::event_loop::create_event_loop;
 use crate::mqtt::mqtt::mqtt_create;
 use crate::wi_fi::wi_fi::wifi_create;
+use log::*;
 
-const MQTT_URL: &str = "mqtt://broker.emqx.io:1883";
-const MQTT_CLIENT_ID: &str = "esp-mqtt-demo";
-const MQTT_TOPIC: &str = "esp-mqtt-demo";
+const MQTT_URL: &str = env!("MQTT_BROKER_URL");
+const MQTT_CLIENT_ID: &str = env!("MQTT_CLIENT_ID");
 
-fn main() -> ! {
+fn main() {
     // Initialize ESP-IDF runtime
     esp_idf_svc::sys::link_patches();
 
@@ -59,7 +59,7 @@ fn main() -> ! {
     );
 
     if let Err(e) = actuator.home() {
-        println!("Homing failed: {:?}", e);
+        info!("Homing failed: {:?}", e);
     }
 
     esp_idf_svc::log::EspLogger::initialize_default();
@@ -71,5 +71,5 @@ fn main() -> ! {
 
     let (mut client, mut conn) = mqtt_create(MQTT_URL, MQTT_CLIENT_ID).unwrap();
 
-    start_event_loop(&mut client, &mut conn, MQTT_TOPIC).unwrap()
+    create_event_loop(&mut client, &mut conn, "smart-hive/start-harvest").unwrap();
 }
