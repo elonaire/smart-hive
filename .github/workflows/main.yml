@@ -14,7 +14,7 @@ jobs:
     env:
       WIFI_SSID: ${{ secrets.WIFI_SSID }}
       WIFI_PASS: ${{ secrets.WIFI_PASS }}
-      MQTT_URL: ${{ secrets.MQTT_URL }}
+      MQTT_URL: ${{ secrets.MQTT_BROKER_URL }}
       MQTT_CLIENT_ID: ${{ secrets.MQTT_CLIENT_ID }}
 
     steps:
