@@ -4,7 +4,7 @@ use esp_idf_hal::ledc::{
     LedcChannel, LedcDriver, LedcTimer, LedcTimerDriver, Resolution, config::TimerConfig,
 };
 use esp_idf_hal::prelude::*;
-use esp_idf_svc::mqtt::client::{EspMqttClient as MqttClient, MqttClientConfiguration, QoS};
+// use esp_idf_svc::mqtt::client::{EspMqttClient as MqttClient, MqttClientConfiguration, QoS};
 use esp_idf_sys as _; // ESP-IDF runtime
 use hardware_abstraction::mcus::hal_esp32::Esp32Actuator;
 use software_defined_hive::state::actuators::{HoneyCellDisplacer, HoneyCellDisplacerCommand};
@@ -22,7 +22,6 @@ fn main() -> ! {
     let timer_config = TimerConfig {
         frequency: Hertz::from(5000),
         resolution: Resolution::Bits10,
-        speed_mode: SpeedMode::LowSpeed
     };
     let ledc_timer = LedcTimerDriver::new(peripherals.ledc.timer0, &timer_config).unwrap();
 
@@ -51,34 +50,35 @@ fn main() -> ! {
     actuator.home().unwrap();
 
     // Configure MQTT client
-    let mqtt_config = MqttClientConfiguration {
-        client_id: Some("hive_actuator".into()),
-        ..Default::default()
-    };
+    // let mqtt_config = MqttClientConfiguration {
+    //     client_id: Some("hive_actuator".into()),
+    //     ..Default::default()
+    // };
+    //
+    // let (mut mqtt_client, mut connection) =
+    //     MqttClient::new("mqtt://host.wokwi.internal:1883", &mqtt_config).unwrap();
+    //
+    // mqtt_client.subscribe("hive/actuator/command", QoS::ExactlyOnce).unwrap();
+    // println!("Subscribed to MQTT topic: hive/actuator/command");
 
     loop {
         // Check for incoming messages
-        let mut mqtt_client =
-            MqttClient::new("mqtt://host.wokwi.internal:1883", &mqtt_config, move |event| {
-                if let Ok(event) = event.next() {
-                    if let Ok(payload_str) = std::str::from_utf8(event.payload().to_string().as_bytes()) {
-                        let command = match payload_str.trim() {
-                            "SlideUp" => HoneyCellDisplacerCommand::SlideUp,
-                            "SlideDown" => HoneyCellDisplacerCommand::SlideDown,
-                            "Stop" => HoneyCellDisplacerCommand::Stop,
-                            _ => {
-                                println!("Unknown command: {}", payload_str);
-                            }
-                        };
-
-                        actuator.execute(command).ok();
-                        println!("Executed command via MQTT: {:?}", command);
-                    };
-                }
-            }).unwrap();
-
-        mqtt_client.subscribe("hive/actuator/command", QoS::ExactlyOnce).unwrap();
-        println!("Subscribed to MQTT topic: hive/actuator/command");
+        // if let Ok(event) = connection.next() {
+        //     if let Ok(payload_str) = std::str::from_utf8(event.payload().to_string().as_bytes()) {
+        //         let command = match payload_str.trim() {
+        //             "SlideUp" => HoneyCellDisplacerCommand::SlideUp,
+        //             "SlideDown" => HoneyCellDisplacerCommand::SlideDown,
+        //             "Stop" => HoneyCellDisplacerCommand::Stop,
+        //             _ => {
+        //                 println!("Unknown command: {}", payload_str);
+        //                 continue;
+        //             }
+        //         };
+        //
+        //         actuator.execute(command).ok();
+        //         println!("Executed command via MQTT: {:?}", command);
+        //     };
+        // }
 
         thread::sleep(Duration::from_millis(100));
     }

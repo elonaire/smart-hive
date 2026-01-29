@@ -8,4 +8,4 @@ software-defined-hive = { path = "../software-defined-hive" }
 hardware-abstraction = { path = "../hardware-abstraction" }
 esp-idf-sys.workspace = true
 esp-idf-hal.workspace = true
-esp-idf-svc.workspace = true
+#esp-idf-svc.workspace = true

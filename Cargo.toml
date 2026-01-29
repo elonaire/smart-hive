@@ -10,9 +10,9 @@ members = [
 ]
 
 [workspace.dependencies]
-esp-idf-sys = { version = "0.33", features = ["binstart"] }
-esp-idf-hal = "0.42.5"
-esp-idf-svc = "0.47.3"
+esp-idf-sys = { version = "0.36.1", features = ["binstart"] }
+esp-idf-hal = "0.45.2"
+#esp-idf-svc = "0.47.3"
 
 [profile.release]
 strip = true      # Automatically strip symbols from the binary.
