@@ -42,43 +42,43 @@ jobs:
       - name: Install Rust
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none
-          source $HOME/.cargo/env
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install espup
-        run: |
-          source $HOME/.cargo/env
-          cargo install espup --locked
+        run: cargo install espup --locked
 
       - name: Install ESP Rust toolchain
-        run: |
-          source $HOME/.cargo/env
-          espup install --targets esp32
+        run: espup install --targets esp32
 
       - name: Install ldproxy
-        run: |
-          source $HOME/.cargo/env
-          cargo install ldproxy
+        run: cargo install ldproxy
 
       - name: Verify toolchain installation
         run: |
-          source $HOME/export-esp.sh
-          echo "=== Rust version ==="
+          . $HOME/export-esp.sh
+          echo "=== Rust version (ESP fork) ==="
           rustc --version
           echo "=== Cargo version ==="
           cargo --version
+          echo "=== Cargo +esp version ==="
+          cargo +esp --version
           echo "=== GCC location ==="
           which xtensa-esp32-elf-gcc || echo "xtensa-esp32-elf-gcc not found"
           echo "=== ldproxy location ==="
           which ldproxy
+          echo "=== RUSTUP_TOOLCHAIN ==="
+          echo $RUSTUP_TOOLCHAIN
           echo "=== PATH ==="
           echo $PATH
 
       - name: Build firmware
         run: |
-          source $HOME/export-esp.sh
-          cargo build --release -p smart-hive --verbose
+          . $HOME/export-esp.sh
+          # Use the esp toolchain explicitly
+          cargo +esp build --release -p smart-hive --verbose
         shell: bash
+        env:
+          RUSTUP_TOOLCHAIN: esp
 
       - name: List build artifacts
         run: |
