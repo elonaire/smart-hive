@@ -9,6 +9,6 @@ hardware-abstraction = { path = "../hardware-abstraction" }
 esp-idf-sys = { workspace = true, features = ["binstart"] }
 esp-idf-hal.workspace = true
 esp-idf-svc.workspace = true
-log = "0.4.29"
+log.workspace = true
 [build-dependencies]
 embuild = { workspace = true, features = ["espidf"] }
