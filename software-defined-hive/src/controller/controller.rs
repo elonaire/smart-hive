@@ -14,6 +14,7 @@ pub struct HiveController<H: HoneyCellDisplacer> {
     drain_started_at: Option<u64>,
 }
 
+// TODO: Rethink this architecture
 impl<H: HoneyCellDisplacer> HiveController<H> {
     pub fn new(policy: HarvestPolicyConfigs, honey_cell_displacer: H) -> Self {
         Self {
