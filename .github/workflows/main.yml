@@ -19,25 +19,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git \
-            wget \
-            flex \
-            bison \
-            gperf \
-            python3 \
-            python3-pip \
-            python3-venv \
-            cmake \
-            ninja-build \
-            ccache \
-            libffi-dev \
-            libssl-dev \
-            dfu-util \
-            libusb-1.0-0 \
-            libudev-dev \
-            pkg-config \
-            libclang-dev \
-            clang
+            git wget flex bison gperf python3 python3-pip python3-venv \
+            cmake ninja-build ccache libffi-dev libssl-dev dfu-util \
+            libusb-1.0-0 libudev-dev pkg-config libclang-dev clang
 
       - name: Install Rust
         run: |
@@ -53,53 +37,25 @@ jobs:
       - name: Install ldproxy
         run: cargo install ldproxy
 
-      - name: Verify toolchain and environment
+      - name: Verify toolchain
         run: |
           . $HOME/export-esp.sh
-          echo "=== Checking GCC ==="
           which xtensa-esp32-elf-gcc
           xtensa-esp32-elf-gcc --version
-          echo "=== Checking environment variables ==="
-          env | grep -E "(IDF|ESP)" || true
-          echo "=== Rust toolchain ==="
-          cargo +esp --version
-          rustc +esp --version --verbose
 
-      - name: Build firmware with verbose output
+      - name: Build firmware
         run: |
           . $HOME/export-esp.sh
-          RUST_BACKTRACE=1 cargo +esp build --release -p smart-hive -vv 2>&1 | tee build.log
+          export LDPROXY_LINKER=xtensa-esp32-elf-gcc
+          cargo +esp build --release -p smart-hive
         shell: bash
-        continue-on-error: true
-
-      - name: Show linker error details
-        if: failure()
-        run: |
-          echo "=== Last 100 lines of build log ==="
-          tail -100 build.log || true
-          echo "=== Checking for ldproxy errors ==="
-          grep -A 20 "ldproxy" build.log || true
-
-      - name: List build artifacts
-        run: |
-          echo "=== Build directory contents ==="
-          ls -lah target/xtensa-esp32-espidf/release/ 2>/dev/null || echo "Release directory not found"
-          find target -type f -name "*.elf" -o -name "*.bin" -o -name "smart*" 2>/dev/null || true
-
-      - name: Upload build log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: build.log
+        env:
+          LDPROXY_LINKER: xtensa-esp32-elf-gcc
 
       - name: Upload firmware artifact
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: smart-hive-firmware
           path: |
             target/xtensa-esp32-espidf/release/smart-hive
             target/xtensa-esp32-espidf/release/*.elf
-            target/xtensa-esp32-espidf/release/*.bin
-          if-no-files-found: warn
