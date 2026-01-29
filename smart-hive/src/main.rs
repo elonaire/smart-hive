@@ -52,11 +52,11 @@ fn main() -> ! {
     )
     .unwrap();
 
-    let dir_a = PinDriver::output(<Gpio19 as Into<dyn IOPin>>::into(peripherals.pins.gpio19).into()).unwrap();
-    let dir_b = PinDriver::output(<Gpio21 as Into<dyn IOPin>>::into(peripherals.pins.gpio21).into()).unwrap();
+    let dir_a = PinDriver::output(peripherals.pins.gpio19.into()).unwrap();
+    let dir_b = PinDriver::output(peripherals.pins.gpio21.into()).unwrap();
 
-    let limit_top = PinDriver::input(<Gpio34 as Into<dyn IOPin>>::into(peripherals.pins.gpio34).into()).unwrap();
-    let limit_bottom = PinDriver::input(<Gpio35 as Into<dyn IOPin>>::into(peripherals.pins.gpio35).into()).unwrap();
+    let limit_top = PinDriver::input(peripherals.pins.gpio34.into()).unwrap();
+    let limit_bottom = PinDriver::input(peripherals.pins.gpio35.into()).unwrap();
 
     let mut actuator = Esp32Actuator::new(
         pwm_channel,

@@ -1,14 +1,14 @@
 use std::time::{Duration, Instant};
-use esp_idf_hal::gpio::{PinDriver, Input, Output, AnyIOPin};
+use esp_idf_hal::gpio::{PinDriver, Input, Output, AnyIOPin, AnyOutputPin, AnyInputPin};
 use esp_idf_hal::ledc::LedcDriver;
 use software_defined_hive::state::actuators::{HoneyCellDisplacerCommand, HoneyCellDisplacer, HoneyCellDisplacerFault};
 
 pub struct Esp32Actuator<'actuator_lifetime> {
     pwm: LedcDriver<'actuator_lifetime>,
-    dir_a: PinDriver<'actuator_lifetime, AnyIOPin, Output>,
-    dir_b: PinDriver<'actuator_lifetime, AnyIOPin, Output>,
-    limit_top: PinDriver<'actuator_lifetime, AnyIOPin, Input>,
-    limit_bottom: PinDriver<'actuator_lifetime, AnyIOPin, Input>,
+    dir_a: PinDriver<'actuator_lifetime, AnyOutputPin, Output>,
+    dir_b: PinDriver<'actuator_lifetime, AnyOutputPin, Output>,
+    limit_top: PinDriver<'actuator_lifetime, AnyInputPin, Input>,
+    limit_bottom: PinDriver<'actuator_lifetime, AnyInputPin, Input>,
     max_move_duration: Duration,
 }
 
@@ -25,10 +25,10 @@ impl HoneyCellDisplacer for Esp32Actuator<'_> {
 impl<'actuator_lifetime> Esp32Actuator<'actuator_lifetime> {
     pub fn new(
         pwm: LedcDriver<'actuator_lifetime>,
-        dir_a: PinDriver<'actuator_lifetime, AnyIOPin, Output>,
-        dir_b: PinDriver<'actuator_lifetime, AnyIOPin, Output>,
-        limit_top: PinDriver<'actuator_lifetime, AnyIOPin, Input>,
-        limit_bottom: PinDriver<'actuator_lifetime, AnyIOPin, Input>,
+        dir_a: PinDriver<'actuator_lifetime, AnyOutputPin, Output>,
+        dir_b: PinDriver<'actuator_lifetime, AnyOutputPin, Output>,
+        limit_top: PinDriver<'actuator_lifetime, AnyInputPin, Input>,
+        limit_bottom: PinDriver<'actuator_lifetime, AnyInputPin, Input>,
         max_move_duration: Duration,
     ) -> Self {
         Self {
@@ -97,7 +97,7 @@ impl<'actuator_lifetime> Esp32Actuator<'actuator_lifetime> {
         Ok(())
     }
 
-    fn wait_until_limit(&self, limit: &PinDriver<'actuator_lifetime, AnyIOPin, Input>) -> Result<(), HoneyCellDisplacerFault> {
+    fn wait_until_limit(&self, limit: &PinDriver<'actuator_lifetime, AnyInputPin, Input>) -> Result<(), HoneyCellDisplacerFault> {
         let start = Instant::now();
         while limit.is_high() {
             if start.elapsed() > self.max_move_duration {
