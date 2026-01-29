@@ -5,9 +5,9 @@ use esp_idf_hal::ledc::{
 };
 use esp_idf_hal::prelude::*;
 use esp_idf_svc::eventloop::EspSystemEventLoop;
-use esp_idf_svc::mqtt::client::{EspMqttClient as MqttClient, MqttClientConfiguration};
+use esp_idf_svc::mqtt::client::{EspMqttClient as MqttClient, MqttClientConfiguration, QoS};
 use esp_idf_svc::netif::*;
-// use esp_idf_svc::wifi::*;
+use esp_idf_svc::wifi::*;
 use esp_idf_sys as _; // ESP-IDF runtime
 use hardware_abstraction::mcus::hal_esp32::Esp32Actuator;
 use software_defined_hive::state::actuators::{HoneyCellDisplacer, HoneyCellDisplacerCommand};
@@ -52,11 +52,11 @@ fn main() -> ! {
     )
     .unwrap();
 
-    let dir_a = peripherals.pins.gpio19.into_output().unwrap();
-    let dir_b = peripherals.pins.gpio21.into_output().unwrap();
+    let dir_a = PinDriver::output(peripherals.pins.gpio19.into().unwrap());
+    let dir_b = PinDriver::output(peripherals.pins.gpio21.into().unwrap());
 
-    let limit_top = peripherals.pins.gpio34.into_input().unwrap();
-    let limit_bottom = peripherals.pins.gpio35.into_input().unwrap();
+    let limit_top = PinDriver::input(peripherals.pins.gpio34.into().unwrap());
+    let limit_bottom = PinDriver::input(peripherals.pins.gpio35.into().unwrap());
 
     let mut actuator = Esp32Actuator::new(
         pwm_channel,
@@ -78,7 +78,7 @@ fn main() -> ! {
     let (mut mqtt_client, mut connection) =
         MqttClient::new("mqtt://host.wokwi.internal:1883", &mqtt_config).unwrap();
 
-    mqtt_client.subscribe("hive/actuator/command", 1).unwrap();
+    mqtt_client.subscribe("hive/actuator/command", QoS::AtMostOnce).unwrap();
     println!("Subscribed to MQTT topic: hive/actuator/command");
 
     loop {
