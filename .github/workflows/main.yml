@@ -45,24 +45,15 @@ jobs:
           exec ldproxy --ldproxy-linker xtensa-esp32-elf-gcc "$@"
           EOF
           chmod +x .cargo/ldproxy-wrapper.sh
-          cat .cargo/ldproxy-wrapper.sh
-
-      - name: Verify toolchain
-        run: |
-          . $HOME/export-esp.sh
-          echo "=== Checking GCC ==="
-          which xtensa-esp32-elf-gcc
-          xtensa-esp32-elf-gcc --version
-          echo "=== Checking ldproxy ==="
-          which ldproxy
-          echo "=== Checking wrapper ==="
-          ls -la .cargo/ldproxy-wrapper.sh
 
       - name: Build firmware
         run: |
           . $HOME/export-esp.sh
-          cargo +esp build --release -p smart-hive
+          cargo +esp build --release -p smart-hive -vv
         shell: bash
+        env:
+          # Ensure ESP-IDF builds correctly
+          ESP_IDF_TOOLS_INSTALL_DIR: global
 
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
@@ -70,4 +61,3 @@ jobs:
           name: smart-hive-firmware
           path: |
             target/xtensa-esp32-espidf/release/smart-hive
-            target/xtensa-esp32-espidf/release/*.elf

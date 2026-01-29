@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 software-defined-hive = { path = "../software-defined-hive" }
 esp-idf-hal.workspace = true
+
