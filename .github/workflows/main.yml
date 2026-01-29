@@ -23,22 +23,22 @@ jobs:
             cmake ninja-build ccache libffi-dev libssl-dev dfu-util \
             libusb-1.0-0 libudev-dev pkg-config
 
-      # Use latest esp-rs action without version pin
       - name: Setup ESP-RS toolchain
         uses: esp-rs/xtensa-toolchain@v1.5
         with:
           default: true
           buildtargets: esp32
           ldproxy: true
-          espidf: v5.1.2
 
-
-      - name: Set ESP-IDF version
-        run: |
-          echo "ESP_IDF_VERSION=v5.1.2" >> $GITHUB_ENV
-
+      # Add environment sourcing before build
       - name: Build firmware
-        run: cargo build --release -p smart-hive
+        run: |
+          # Source the ESP environment
+          if [ -f "$HOME/export-esp.sh" ]; then
+            source "$HOME/export-esp.sh"
+          fi
+          cargo build --release -p smart-hive
+        shell: bash
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
