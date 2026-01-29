@@ -7,7 +7,7 @@ use esp_idf_hal::prelude::*;
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::mqtt::client::{EspMqttClient as MqttClient, MqttClientConfiguration, QoS};
 use esp_idf_svc::netif::*;
-use esp_idf_svc::wifi::*;
+// use esp_idf_svc::wifi::*;
 use esp_idf_sys as _; // ESP-IDF runtime
 use hardware_abstraction::mcus::hal_esp32::Esp32Actuator;
 use software_defined_hive::state::actuators::{HoneyCellDisplacer, HoneyCellDisplacerCommand};
