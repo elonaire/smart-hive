@@ -40,7 +40,7 @@ jobs:
       - name: Build firmware
         run: |
           . $HOME/export-esp.sh
-          cargo +esp build --release -p smart-hive
+          cargo +esp build --release --target xtensa-esp32-espidf -p smart-hive
         shell: bash
         env:
           ESP_IDF_TOOLS_INSTALL_DIR: global
