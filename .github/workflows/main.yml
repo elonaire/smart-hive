@@ -27,7 +27,7 @@ jobs:
         uses: esp-rs/xtensa-toolchain@v1.5
         with:
           default: true
-          buildtargets: esp32
+          version: "1.66.0"
           ldproxy: true
 
       # This is the critical part - ensure PATH is set
