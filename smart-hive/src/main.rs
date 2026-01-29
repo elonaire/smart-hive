@@ -10,7 +10,6 @@ use esp_idf_hal::ledc::{
 use esp_idf_hal::prelude::*;
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::nvs::EspDefaultNvsPartition;
-use esp_idf_sys as _; // ESP-IDF runtime
 use hardware_abstraction::mcus::hal_esp32::Esp32Actuator;
 use software_defined_hive::state::actuators::{HoneyCellDisplacer, HoneyCellDisplacerCommand};
 use std::time::Duration;
@@ -25,7 +24,7 @@ const MQTT_TOPIC: &str = "esp-mqtt-demo";
 
 fn main() -> ! {
     // Initialize ESP-IDF runtime
-    esp_idf_sys::link_patches();
+    esp_idf_svc::sys::link_patches();
 
     // Configure and connect to Wi-Fi
     let peripherals = Peripherals::take().unwrap();

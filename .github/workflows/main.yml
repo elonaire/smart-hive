@@ -33,7 +33,7 @@ jobs:
         run: cargo install espup --locked
 
       - name: Install ESP Rust toolchain
-        run: espup install --targets esp32 --stable-version v4.4.8
+        run: espup install --targets esp32 --stable-version v5.4.2
 
       - name: Install ldproxy
         run: cargo install ldproxy
