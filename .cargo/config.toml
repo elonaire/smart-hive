@@ -2,7 +2,7 @@
 target = "xtensa-esp32-espidf"
 
 [target.xtensa-esp32-espidf]
-linker = ".cargo/ldproxy-wrapper.sh"
+linker = "ldproxy"
 
 [unstable]
 build-std = ["std", "panic_abort"]
