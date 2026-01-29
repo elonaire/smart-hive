@@ -45,14 +45,18 @@ jobs:
           exec ldproxy --ldproxy-linker xtensa-esp32-elf-gcc "$@"
           EOF
           chmod +x .cargo/ldproxy-wrapper.sh
+          cat .cargo/ldproxy-wrapper.sh
 
       - name: Verify toolchain
         run: |
           . $HOME/export-esp.sh
+          echo "=== Checking GCC ==="
           which xtensa-esp32-elf-gcc
           xtensa-esp32-elf-gcc --version
+          echo "=== Checking ldproxy ==="
           which ldproxy
-          ldproxy --version || true
+          echo "=== Checking wrapper ==="
+          ls -la .cargo/ldproxy-wrapper.sh
 
       - name: Build firmware
         run: |
