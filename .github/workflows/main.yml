@@ -25,14 +25,15 @@ jobs:
 
       - name: Install Rust
         run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none
+          rustup toolchain install stable
+          rustup component add rustfmt clippy
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install espup
         run: cargo install espup --locked
 
       - name: Install ESP Rust toolchain
-        run: espup install --targets esp32
+        run: espup install --targets esp32 --idf-version v5.1.2
 
       - name: Install ldproxy
         run: cargo install ldproxy
