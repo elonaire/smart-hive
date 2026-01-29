@@ -4,15 +4,12 @@ use esp_idf_hal::ledc::{
     LedcChannel, LedcDriver, LedcTimer, LedcTimerDriver, Resolution, config::TimerConfig,
 };
 use esp_idf_hal::prelude::*;
-use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::mqtt::client::{EspMqttClient as MqttClient, MqttClientConfiguration, QoS};
-use esp_idf_svc::netif::*;
-// use esp_idf_svc::wifi::*;
 use esp_idf_sys as _; // ESP-IDF runtime
 use hardware_abstraction::mcus::hal_esp32::Esp32Actuator;
 use software_defined_hive::state::actuators::{HoneyCellDisplacer, HoneyCellDisplacerCommand};
 use std::time::Duration;
-use std::{env, thread};
+use std::thread;
 
 fn main() -> ! {
     // Initialize ESP-IDF runtime
@@ -20,23 +17,6 @@ fn main() -> ! {
 
     // Configure and connect to Wi-Fi
     let peripherals = Peripherals::take().unwrap();
-    // let sysloop = EspSystemEventLoop::take().unwrap();
-    // let mut wifi = EspWifi::new(peripherals.modem, sysloop.clone()).unwrap();
-    // let mut wifi = EspWifi::new();
-
-    // let ssid = env::var("WIFI_SSID").expect("WIFI_SSID not set");
-    // let password = env::var("WIFI_PASS").expect("WIFI_PASS not set");
-    //
-    // wifi.set_configuration(&Configuration::Client(ClientConfiguration {
-    //     ssid,
-    //     password,
-    //     ..Default::default()
-    // }))
-    // .unwrap();
-    // wifi.start().unwrap();
-    // wifi.connect().unwrap();
-    //
-    // println!("Wi-Fi connected!");
 
     // Configure PWM / direction / limit switches
     let timer_config = TimerConfig {
