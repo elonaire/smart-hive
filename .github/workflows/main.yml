@@ -53,41 +53,48 @@ jobs:
       - name: Install ldproxy
         run: cargo install ldproxy
 
-      - name: Verify toolchain installation
+      - name: Verify toolchain and environment
         run: |
           . $HOME/export-esp.sh
-          echo "=== Rust version (ESP fork) ==="
-          rustc --version
-          echo "=== Cargo version ==="
-          cargo --version
-          echo "=== Cargo +esp version ==="
+          echo "=== Checking GCC ==="
+          which xtensa-esp32-elf-gcc
+          xtensa-esp32-elf-gcc --version
+          echo "=== Checking environment variables ==="
+          env | grep -E "(IDF|ESP)" || true
+          echo "=== Rust toolchain ==="
           cargo +esp --version
-          echo "=== GCC location ==="
-          which xtensa-esp32-elf-gcc || echo "xtensa-esp32-elf-gcc not found"
-          echo "=== ldproxy location ==="
-          which ldproxy
-          echo "=== RUSTUP_TOOLCHAIN ==="
-          echo $RUSTUP_TOOLCHAIN
-          echo "=== PATH ==="
-          echo $PATH
+          rustc +esp --version --verbose
 
-      - name: Build firmware
+      - name: Build firmware with verbose output
         run: |
           . $HOME/export-esp.sh
-          # Use the esp toolchain explicitly
-          cargo +esp build --release -p smart-hive --verbose
+          RUST_BACKTRACE=1 cargo +esp build --release -p smart-hive -vv 2>&1 | tee build.log
         shell: bash
-        env:
-          RUSTUP_TOOLCHAIN: esp
+        continue-on-error: true
+
+      - name: Show linker error details
+        if: failure()
+        run: |
+          echo "=== Last 100 lines of build log ==="
+          tail -100 build.log || true
+          echo "=== Checking for ldproxy errors ==="
+          grep -A 20 "ldproxy" build.log || true
 
       - name: List build artifacts
         run: |
           echo "=== Build directory contents ==="
-          ls -lah target/xtensa-esp32-espidf/release/ || echo "Release directory not found"
-          echo "=== Looking for binary ==="
-          find target -name "smart-hive" -o -name "smart_hive" -o -name "*.elf" -o -name "*.bin"
+          ls -lah target/xtensa-esp32-espidf/release/ 2>/dev/null || echo "Release directory not found"
+          find target -type f -name "*.elf" -o -name "*.bin" -o -name "smart*" 2>/dev/null || true
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
 
       - name: Upload firmware artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: smart-hive-firmware
