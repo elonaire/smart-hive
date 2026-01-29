@@ -22,6 +22,7 @@ fn main() -> ! {
     let timer_config = TimerConfig {
         frequency: Hertz::from(5000),
         resolution: Resolution::Bits10,
+        speed_mode: SpeedMode::LowSpeed
     };
     let ledc_timer = LedcTimerDriver::new(peripherals.ledc.timer0, &timer_config).unwrap();
 
@@ -55,30 +56,29 @@ fn main() -> ! {
         ..Default::default()
     };
 
-    let (mut mqtt_client, mut connection) =
-        MqttClient::new("mqtt://host.wokwi.internal:1883", &mqtt_config).unwrap();
-
-    mqtt_client.subscribe("hive/actuator/command", QoS::ExactlyOnce).unwrap();
-    println!("Subscribed to MQTT topic: hive/actuator/command");
-
     loop {
         // Check for incoming messages
-        if let Ok(event) = connection.next() {
-            if let Ok(payload_str) = std::str::from_utf8(event.payload().to_string().as_bytes()) {
-                let command = match payload_str.trim() {
-                    "SlideUp" => HoneyCellDisplacerCommand::SlideUp,
-                    "SlideDown" => HoneyCellDisplacerCommand::SlideDown,
-                    "Stop" => HoneyCellDisplacerCommand::Stop,
-                    _ => {
-                        println!("Unknown command: {}", payload_str);
-                        continue;
-                    }
-                };
+        let mut mqtt_client =
+            MqttClient::new("mqtt://host.wokwi.internal:1883", &mqtt_config, move |event| {
+                if let Ok(event) = event.next() {
+                    if let Ok(payload_str) = std::str::from_utf8(event.payload().to_string().as_bytes()) {
+                        let command = match payload_str.trim() {
+                            "SlideUp" => HoneyCellDisplacerCommand::SlideUp,
+                            "SlideDown" => HoneyCellDisplacerCommand::SlideDown,
+                            "Stop" => HoneyCellDisplacerCommand::Stop,
+                            _ => {
+                                println!("Unknown command: {}", payload_str);
+                            }
+                        };
 
-                actuator.execute(command).ok();
-                println!("Executed command via MQTT: {:?}", command);
-            };
-        }
+                        actuator.execute(command).ok();
+                        println!("Executed command via MQTT: {:?}", command);
+                    };
+                }
+            }).unwrap();
+
+        mqtt_client.subscribe("hive/actuator/command", QoS::ExactlyOnce).unwrap();
+        println!("Subscribed to MQTT topic: hive/actuator/command");
 
         thread::sleep(Duration::from_millis(100));
     }
