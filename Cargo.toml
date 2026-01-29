@@ -13,7 +13,7 @@ members = [
 esp-idf-sys = { version = "0.36.1", features = ["binstart"] }
 esp-idf-hal = "0.45.2"
 #esp-idf-svc = "0.47.3"
-embuild = "0.32"
+embuild = "0.33.1"
 
 [profile.release]
 strip = true      # Automatically strip symbols from the binary.
