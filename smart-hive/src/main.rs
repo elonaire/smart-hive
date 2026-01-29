@@ -19,7 +19,7 @@ use crate::mqtt::mqtt::mqtt_create;
 use crate::wi_fi::wi_fi::wifi_create;
 use log::*;
 
-const MQTT_URL: &str = env!("MQTT_BROKER_URL");
+const MQTT_BROKER_URL: &str = env!("MQTT_BROKER_URL");
 const MQTT_CLIENT_ID: &str = env!("MQTT_CLIENT_ID");
 
 fn main() {
@@ -69,7 +69,7 @@ fn main() {
 
     let _wifi = wifi_create(&sys_loop, &nvs).unwrap();
 
-    let (mut client, mut conn) = mqtt_create(MQTT_URL, MQTT_CLIENT_ID).unwrap();
+    let (mut client, mut conn) = mqtt_create(MQTT_BROKER_URL, MQTT_CLIENT_ID).unwrap();
 
     create_event_loop(&mut client, &mut conn, "smart-hive/start-harvest").unwrap();
 }
