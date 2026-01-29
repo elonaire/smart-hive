@@ -48,16 +48,24 @@ jobs:
 
       - name: Build firmware
         run: |
-          . $HOME/export-esp.sh
-          cargo +esp build --release -p smart-hive -vv
+            . $HOME/export-esp.sh
+            cargo +esp build --release -p smart-hive
         shell: bash
         env:
-          # Ensure ESP-IDF builds correctly
-          ESP_IDF_TOOLS_INSTALL_DIR: global
+            ESP_IDF_TOOLS_INSTALL_DIR: global
+
+      - name: Prepare artifacts for Wokwi
+        run: |
+                mkdir -p artifacts
+                # Copy the ELF file with a simple name
+                find target/xtensa-esp32-espidf/release/deps -name "smart_hive-*.elf" -exec cp {} artifacts/smart-hive.elf \;
+                # Also copy the binary
+                cp target/xtensa-esp32-espidf/release/smart-hive artifacts/ 2>/dev/null || true
+                echo "=== Artifacts prepared ==="
+                ls -lah artifacts/
 
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
-          name: smart-hive-firmware
-          path: |
-            target/xtensa-esp32-espidf/release/smart-hive
+                name: smart-hive-firmware
+                path: artifacts/*
