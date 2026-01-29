@@ -37,20 +37,28 @@ jobs:
       - name: Install ldproxy
         run: cargo install ldproxy
 
+      - name: Create ldproxy wrapper
+        run: |
+          mkdir -p .cargo
+          cat > .cargo/ldproxy-wrapper.sh << 'EOF'
+          #!/bin/bash
+          exec ldproxy --ldproxy-linker xtensa-esp32-elf-gcc "$@"
+          EOF
+          chmod +x .cargo/ldproxy-wrapper.sh
+
       - name: Verify toolchain
         run: |
           . $HOME/export-esp.sh
           which xtensa-esp32-elf-gcc
           xtensa-esp32-elf-gcc --version
+          which ldproxy
+          ldproxy --version || true
 
       - name: Build firmware
         run: |
           . $HOME/export-esp.sh
-          export LDPROXY_LINKER=xtensa-esp32-elf-gcc
           cargo +esp build --release -p smart-hive
         shell: bash
-        env:
-          LDPROXY_LINKER: xtensa-esp32-elf-gcc
 
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
