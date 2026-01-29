@@ -30,14 +30,17 @@ jobs:
           buildtargets: esp32
           ldproxy: true
 
-      # Add environment sourcing before build
+      # This is the critical part - ensure PATH is set
+      - name: Verify toolchain
+        run: |
+          source $HOME/export-esp.sh
+          which xtensa-esp32-elf-gcc || echo "GCC not found in PATH"
+          echo $PATH
+
       - name: Build firmware
         run: |
-          # Source the ESP environment
-          if [ -f "$HOME/export-esp.sh" ]; then
-            source "$HOME/export-esp.sh"
-          fi
-          cargo build --release -p smart-hive
+          source $HOME/export-esp.sh
+          cargo build --release -p smart-hive --verbose
         shell: bash
 
       - name: Upload firmware
