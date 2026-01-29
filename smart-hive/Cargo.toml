@@ -6,6 +6,6 @@ edition = "2024"
 [dependencies]
 software-defined-hive = { path = "../software-defined-hive" }
 hardware-abstraction = { path = "../hardware-abstraction" }
-esp-idf-sys.workspace = true
+esp-idf-sys = { workspace = true, features = ["binstart"] }
 esp-idf-hal.workspace = true
 #esp-idf-svc.workspace = true
