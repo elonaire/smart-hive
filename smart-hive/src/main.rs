@@ -1,15 +1,27 @@
+mod mqtt;
+mod wi_fi;
+mod event_loop;
+
 use esp_idf_hal::gpio::*;
 use esp_idf_hal::ledc::*;
 use esp_idf_hal::ledc::{
     LedcChannel, LedcDriver, LedcTimer, LedcTimerDriver, Resolution, config::TimerConfig,
 };
 use esp_idf_hal::prelude::*;
-use esp_idf_svc::mqtt::client::{EspMqttClient as MqttClient, MqttClientConfiguration, QoS};
+use esp_idf_svc::eventloop::EspSystemEventLoop;
+use esp_idf_svc::nvs::EspDefaultNvsPartition;
 use esp_idf_sys as _; // ESP-IDF runtime
 use hardware_abstraction::mcus::hal_esp32::Esp32Actuator;
 use software_defined_hive::state::actuators::{HoneyCellDisplacer, HoneyCellDisplacerCommand};
 use std::time::Duration;
 use std::thread;
+use crate::event_loop::event_loop::start_event_loop;
+use crate::mqtt::mqtt::mqtt_create;
+use crate::wi_fi::wi_fi::wifi_create;
+
+const MQTT_URL: &str = "mqtt://broker.emqx.io:1883";
+const MQTT_CLIENT_ID: &str = "esp-mqtt-demo";
+const MQTT_TOPIC: &str = "esp-mqtt-demo";
 
 fn main() -> ! {
     // Initialize ESP-IDF runtime
@@ -48,41 +60,17 @@ fn main() -> ! {
     );
 
     if let Err(e) = actuator.home() {
-        println!("Homing failed (expected in Wokwi): {:?}", e);
+        println!("Homing failed: {:?}", e);
     }
 
-    // Configure MQTT client
-    let mqtt_config = MqttClientConfiguration {
-        client_id: Some("hive_actuator".into()),
-        ..Default::default()
-    };
+    esp_idf_svc::log::EspLogger::initialize_default();
 
-    let (mut mqtt_client, mut connection) =
-        MqttClient::new("mqtt://host.wokwi.internal:1883", &mqtt_config).unwrap();
+    let sys_loop = EspSystemEventLoop::take().unwrap();
+    let nvs = EspDefaultNvsPartition::take().unwrap();
 
-    mqtt_client.subscribe("hive/actuator/command", QoS::ExactlyOnce).unwrap();
-    println!("Subscribed to MQTT topic: hive/actuator/command");
-    println!("The Smart Hive is Online!");
+    let _wifi = wifi_create(&sys_loop, &nvs).unwrap();
 
-    loop {
-        // Check for incoming messages
-        if let Ok(event) = connection.next() {
-            if let Ok(payload_str) = std::str::from_utf8(event.payload().to_string().as_bytes()) {
-                let command = match payload_str.trim() {
-                    "SlideUp" => HoneyCellDisplacerCommand::SlideUp,
-                    "SlideDown" => HoneyCellDisplacerCommand::SlideDown,
-                    "Stop" => HoneyCellDisplacerCommand::Stop,
-                    _ => {
-                        println!("Unknown command: {}", payload_str);
-                        continue;
-                    }
-                };
+    let (mut client, mut conn) = mqtt_create(MQTT_URL, MQTT_CLIENT_ID).unwrap();
 
-                actuator.execute(command).ok();
-                println!("Executed command via MQTT: {:?}", command);
-            };
-        }
-
-        thread::sleep(Duration::from_millis(100));
-    }
+    start_event_loop(&mut client, &mut conn, MQTT_TOPIC).unwrap()
 }
