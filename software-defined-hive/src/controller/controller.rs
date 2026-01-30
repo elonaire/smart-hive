@@ -48,7 +48,7 @@ pub enum HiveCommand {
     GetStatus,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HiveStatus {
     pub state: HiveState,
     pub last_weight_g: Option<u32>,
@@ -57,7 +57,7 @@ pub struct HiveStatus {
     pub policy: HarvestPolicyConfigs,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PolicyUpdateResponse {
     pub status: String,
     pub policy: HarvestPolicyConfigs,

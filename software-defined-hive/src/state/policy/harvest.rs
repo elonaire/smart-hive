@@ -1,8 +1,8 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// Most of these values can be re-calibrated and delivered as Over the Air (OTA) updates
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HarvestPolicyConfigs {
     /// Minimum weight to consider the batch as a harvest candidate (grams)
     pub min_honey_weight_g: u32,
