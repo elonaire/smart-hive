@@ -26,7 +26,7 @@ pub fn wifi_create(
 
     wifi.set_configuration(&Configuration::Client(ClientConfiguration {
         ssid: WIFI_SSID.try_into().unwrap(),
-        password: WIFI_PASS.try_into().unwrap(),
+        password: "".try_into().unwrap(),
         ..Default::default()
     }))?;
 
