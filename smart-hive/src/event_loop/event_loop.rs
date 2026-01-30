@@ -4,17 +4,19 @@ use esp_idf_svc::mqtt::client::*;
 use esp_idf_svc::sys::EspError;
 
 use log::*;
+use crate::MqttTopic;
 
 pub fn create_event_loop<F>(
     client: &mut EspMqttClient<'_>,
     connection: &mut EspMqttConnection,
+    mqtt_topics: &Vec<MqttTopic>,
     mut on_message: F,
 ) -> Result<(), EspError>
 where
     F: FnMut(Option<&str>, &str) + Send + 'static,  // (topic, payload)
 {
     std::thread::scope(|s| {
-        info!("Starting the MQTT client!");
+        info!("About to start the MQTT client");
 
         std::thread::Builder::new()
             .stack_size(6000)
@@ -45,9 +47,30 @@ where
             })
             .unwrap();
 
-        // Keep main thread alive
+        // Outer loop: Retry subscriptions until all succeed
         loop {
-            std::thread::sleep(Duration::from_secs(60));
+            let mut all_subscribed = true;
+
+            for mqtt_topic in mqtt_topics {
+                if let Err(e) = client.subscribe(mqtt_topic.topic, mqtt_topic.qos) {
+                    error!("Failed to subscribe to topic \"{mqtt_topic.topic}\": {e}, retrying...");
+                    all_subscribed = false;
+                    std::thread::sleep(Duration::from_millis(500));
+                    break;
+                }
+            }
+
+            if all_subscribed {
+                for mqtt_topic in mqtt_topics {
+                    info!("Subscribed to topic \"{mqtt_topic.topic}\"");
+                }
+                std::thread::sleep(Duration::from_millis(500));
+
+                // Inner loop: Keep the main thread alive
+                loop {
+                    std::thread::sleep(Duration::from_secs(60));
+                }
+            }
         }
     })
 }

@@ -110,33 +110,11 @@ fn main() {
         MqttTopic { topic: "smart-hive/sensors/weight", qos: QoS::AtMostOnce },
     ];
 
-    loop {
-        let mut all_subscribed = true;
-
-        for mqtt_topic in &mqtt_topics {
-            if let Err(e) = mqtt_client.subscribe(mqtt_topic.topic, mqtt_topic.qos) {
-                error!("Failed to subscribe to \"{:?}\": {:?}, retrying...", mqtt_topic.topic, e);
-                all_subscribed = false;
-                std::thread::sleep(Duration::from_millis(500));
-                break; // Break inner loop to retry from the beginning
-            }
-        }
-
-        if all_subscribed {
-            for mqtt_topic in &mqtt_topics {
-                info!("Subscribed to topic: {:?}", mqtt_topic);
-            }
-            std::thread::sleep(Duration::from_millis(500));
-            break; // Exit outer loop when all topics are subscribed
-        }
-    }
-
-
-
     // Create event loop with message router
     create_event_loop(
         &mut mqtt_client,
         &mut conn,
+        &mqtt_topics,
         move |topic, payload| {
             match topic {
                 Some("smart-hive/commands") => {
