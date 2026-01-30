@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use log::info;
 use crate::state::policy::harvest::HarvestPolicyConfigs;
 use crate::state::actuators::{HoneyCellDisplacer, HoneyCellDisplacerCommand};
 use crate::state::hive::HiveState;
@@ -158,12 +159,13 @@ impl<H: HoneyCellDisplacer> HiveController<H> {
         self.state
     }
 
-    /// Process a command received via MQTT or other interface
+    /// Process a command received via MQTT
     pub fn process_command(&mut self, command: HiveCommand) -> Result<Option<String>, String> {
         match command {
             HiveCommand::AuthorizeHarvest => {
                 if self.state == HiveState::Ready {
                     self.state = HiveState::Authorized;
+                    info!("The honey is being harvested!");
                     Ok(None)
                 } else {
                     Err(format!("Cannot authorize harvest in state {:?}", self.state))

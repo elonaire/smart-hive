@@ -106,7 +106,7 @@ fn main() {
 
     // Subscribe to multiple topics
     let mqtt_topics: Vec<MqttTopic> = vec![
-        MqttTopic { topic: "smart-hive/commands", qos: QoS::ExactlyOnce },
+        MqttTopic { topic: "smart-hive/commands", qos: QoS::AtLeastOnce },
         MqttTopic { topic: "smart-hive/sensors/weight", qos: QoS::AtLeastOnce },
     ];
 
@@ -118,8 +118,7 @@ fn main() {
         move |topic, payload| {
             match topic {
                 Some("smart-hive/commands") => {
-                    // Exactly once because we need precision with the hive functionality
-                    handle_command(payload, &controller_clone, &client_clone, &QoS::ExactlyOnce);
+                    handle_command(payload, &controller_clone, &client_clone, &QoS::AtLeastOnce);
                 }
                 Some("smart-hive/sensors/weight") => {
                     // Our sensors can fire and forget, they will be publishing periodically, so no harm if we lose a packet or two
