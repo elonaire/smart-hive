@@ -25,7 +25,7 @@ pub fn wifi_create(
     let mut wifi = BlockingWifi::wrap(&mut esp_wifi, sys_loop.clone())?;
 
     wifi.set_configuration(&Configuration::Client(ClientConfiguration {
-        ssid: WIFI_SSID.try_into().unwrap(),
+        ssid: "Wokwi-GUEST".try_into().unwrap(),
         password: "".try_into().unwrap(),
         auth_method: AuthMethod::None,
         ..Default::default()
