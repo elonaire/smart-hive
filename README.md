@@ -1,4 +1,6 @@
-# Smart Hive
+# Smart Hive 🐝
+**Hackathon:** #RustAfricaHackathon
+
 This is an IoT/Embedded project that aims to make bee farming more efficient and protect nature while at it. The Smart Hive was born as a result of first-hand experience with the process of traditional beekeeping in Africa; the inefficiency, the lack of precision, the harm done to bees during harvest, and the effect it has on bees rebuilding and making honey once again.
 
 ## Project structure
@@ -32,9 +34,54 @@ to = "target:1883"
 You only need to copy the binary `smart-hive` to the `esp32-mini-1` directory and run the simulation (preferably in RustRover using the Wokwi plugin).
 
 ### MQTT Events
+The following are MQTT events which the hive subscribes to:
+1. smart-hive/commands
+Sample message:
+```json
+{"command": "authorize_harvest"}
+```
+Message constraints:
+```rust
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(tag = "command")]
+pub enum HiveCommand {
+    #[serde(rename = "authorize_harvest")]
+    AuthorizeHarvest,
 
+    #[serde(rename = "cancel_harvest")]
+    CancelHarvest,
 
-## License 📝
+    #[serde(rename = "emergency_stop")]
+    EmergencyStop,
+
+    #[serde(rename = "reset_fault")]
+    ResetFault,
+
+    #[serde(rename = "manual_slide_down")]
+    ManualSlideDown,
+
+    #[serde(rename = "manual_slide_up")]
+    ManualSlideUp,
+
+    #[serde(rename = "update_policy")]
+    UpdatePolicy {
+        policy: HarvestPolicyConfigs,
+    },
+
+    #[serde(rename = "get_policy")]
+    GetPolicy,
+
+    #[serde(rename = "get_status")]
+    GetStatus,
+}
+```
+2. smart-hive/sensors/weight
+Sample message:
+```json
+{"weight_g": 4200, "timestamp_s": 1738252800}
+```
+
+## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments 🙏🏽

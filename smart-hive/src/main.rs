@@ -107,7 +107,7 @@ fn main() {
     // Subscribe to multiple topics
     let topics: Vec<MqttTopic> = vec![
         MqttTopic { topic: "smart-hive/commands", qos: QoS::AtMostOnce },
-        MqttTopic { topic: "sensors/weight", qos: QoS::AtMostOnce },
+        MqttTopic { topic: "smart-hive/sensors/weight", qos: QoS::AtMostOnce },
     ];
 
     for topic in &topics {
