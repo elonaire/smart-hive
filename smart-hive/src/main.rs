@@ -106,8 +106,8 @@ fn main() {
 
     // Subscribe to multiple topics
     let mqtt_topics: Vec<MqttTopic> = vec![
-        MqttTopic { topic: "smart-hive/commands", qos: QoS::AtMostOnce },
-        MqttTopic { topic: "smart-hive/sensors/weight", qos: QoS::AtMostOnce },
+        MqttTopic { topic: "smart-hive/commands", qos: QoS::ExactlyOnce },
+        MqttTopic { topic: "smart-hive/sensors/weight", qos: QoS::AtLeastOnce },
     ];
 
     // Create event loop with message router
@@ -119,11 +119,11 @@ fn main() {
             match topic {
                 Some("smart-hive/commands") => {
                     // Exactly once because we need precision with the hive functionality
-                    handle_command(payload, &controller_clone, &client_clone, &QoS::AtMostOnce);
+                    handle_command(payload, &controller_clone, &client_clone, &QoS::ExactlyOnce);
                 }
                 Some("smart-hive/sensors/weight") => {
                     // Our sensors can fire and forget, they will be publishing periodically, so no harm if we lose a packet or two
-                    handle_sensor_reading(payload, &controller_clone, &client_clone, &QoS::ExactlyOnce);
+                    handle_sensor_reading(payload, &controller_clone, &client_clone, &QoS::AtLeastOnce);
                 }
                 _ => {
                     warn!("Received message on unknown topic: {:?}", topic);

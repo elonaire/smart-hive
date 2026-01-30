@@ -1,4 +1,4 @@
-# Smart Hive 🐝
+# Smart Hive (Software-defined Product)🐝
 **Hackathon:** #RustAfricaHackathon
 
 This is an IoT/Embedded project that aims to make bee farming more efficient and protect nature while at it. The Smart Hive was born as a result of first-hand experience with the process of traditional beekeeping in Africa; the inefficiency, the lack of precision, the harm done to bees during harvest, and the effect it has on bees rebuilding and making honey once again.
