@@ -13,13 +13,13 @@ pub fn create_event_loop<F>(
     mut on_message: F,
 ) -> Result<(), EspError>
 where
-    F: FnMut(Option<&str>, &str) + Send + 'static,  // (topic, payload)
+    F: FnMut(Option<&str>, &str) + Send + 'static,
 {
     std::thread::scope(|s| {
         info!("About to start the MQTT client");
 
         std::thread::Builder::new()
-            .stack_size(6000)
+            .stack_size(8192)  // Increased stack size
             .spawn_scoped(s, move || {
                 info!("MQTT Listening for messages");
 
@@ -39,11 +39,14 @@ where
                         EventPayload::Disconnected => {
                             warn!("MQTT Disconnected");
                         }
+                        EventPayload::Error(e) => {
+                            error!("MQTT Error: {:?}", e);
+                        }
                         _ => {}
                     }
                 }
 
-                info!("Connection closed");
+                warn!("Connection closed - this shouldn't happen!");
             })
             .unwrap();
 
@@ -64,13 +67,12 @@ where
                 for mqtt_topic in mqtt_topics {
                     info!("Subscribed to topic \"{:?}\"", mqtt_topic.topic);
                 }
-                // std::thread::sleep(Duration::from_millis(500));
+                std::thread::sleep(Duration::from_millis(500));
 
-
-            }
-            // Inner loop: Keep the main thread alive
-            loop {
-                std::thread::sleep(Duration::from_secs(60));
+                // Inner loop: Keep the main thread alive
+                loop {
+                    std::thread::sleep(Duration::from_secs(60));
+                }
             }
         }
     })
