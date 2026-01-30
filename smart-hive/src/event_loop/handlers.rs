@@ -7,12 +7,12 @@ use software_defined_hive::state::actuators::HoneyCellDisplacer;
 use software_defined_hive::state::hive::HiveState;
 use software_defined_hive::state::sensors::SensorReadings;
 
-// Handler for all hive commands received as MQTT messages
+/// Handler for all hive commands received as MQTT messages
+/// qos is the quality of service (QoS)
 pub fn handle_command<H: HoneyCellDisplacer>(
     payload: &str,
     controller: &Arc<Mutex<HiveController<H>>>,
     client: &Arc<Mutex<EspMqttClient<'_>>>,
-    /// This the quality of service (QoS)
     qos: &QoS,
 ) {
     match serde_json::from_str::<HiveCommand>(payload) {
@@ -42,12 +42,12 @@ pub fn handle_command<H: HoneyCellDisplacer>(
     }
 }
 
-// Handler for sensor readings
+/// Handler for sensor readings
+/// qos the quality of service (QoS)
 pub fn handle_sensor_reading<H: HoneyCellDisplacer>(
     payload: &str,
     controller: &Arc<Mutex<HiveController<H>>>,
     client: &Arc<Mutex<EspMqttClient<'_>>>,
-    /// This the quality of service (QoS)
     qos: &QoS,
 ) {
     match serde_json::from_str::<SensorReadings>(payload) {
@@ -98,12 +98,12 @@ pub fn handle_sensor_reading<H: HoneyCellDisplacer>(
     }
 }
 
-// Helper function to publish messages
+/// Helper function to publish messages (this logic is repetitive)
+/// qos is the quality of service (QoS)
 fn publish_message(
     client: &Arc<Mutex<EspMqttClient<'_>>>,
     topic: &str,
     message: &str,
-    /// This the quality of service (QoS)
     qos: &QoS,
 ) {
     let mut mqtt_client = client.lock().unwrap();

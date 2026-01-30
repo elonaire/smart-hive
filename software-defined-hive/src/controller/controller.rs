@@ -4,6 +4,7 @@ use crate::state::actuators::{HoneyCellDisplacer, HoneyCellDisplacerCommand};
 use crate::state::hive::HiveState;
 use crate::state::sensors::SensorReadings;
 
+/// This describes the brain of the hive
 pub struct HiveController<H: HoneyCellDisplacer> {
     state: HiveState,
     policy: HarvestPolicyConfigs,

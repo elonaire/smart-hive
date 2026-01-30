@@ -4,23 +4,20 @@ mod event_loop;
 
 use std::sync::{Arc, Mutex};
 use esp_idf_hal::gpio::*;
-use esp_idf_hal::ledc::*;
 use esp_idf_hal::ledc::{
-    LedcChannel, LedcDriver, LedcTimer, LedcTimerDriver, Resolution, config::TimerConfig,
+    LedcDriver, LedcTimerDriver, Resolution, config::TimerConfig,
 };
 use esp_idf_hal::prelude::*;
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::nvs::EspDefaultNvsPartition;
 use hardware_abstraction::mcus::hal_esp32::Esp32Actuator;
-use software_defined_hive::state::actuators::{HoneyCellDisplacer, HoneyCellDisplacerCommand};
 use std::time::Duration;
-use std::thread;
 use esp_idf_svc::mqtt::client::QoS;
 use crate::event_loop::event_loop::create_event_loop;
 use crate::mqtt::mqtt::mqtt_create;
 use crate::wi_fi::wi_fi::wifi_create;
 use log::*;
-use software_defined_hive::controller::controller::{HiveCommand, HiveController};
+use software_defined_hive::controller::controller::HiveController;
 use software_defined_hive::state::policy::harvest::HarvestPolicyConfigs;
 use crate::event_loop::handlers::{handle_command, handle_sensor_reading};
 
@@ -115,7 +112,7 @@ fn main() {
 
     for topic in &topics {
         mqtt_client.subscribe(topic.topic, topic.qos).unwrap();
-        info!("Subscribed to topic: {}", topic);
+        info!("Subscribed to topic: {:?}", topic);
     }
 
 
@@ -134,7 +131,7 @@ fn main() {
                     handle_sensor_reading(payload, &controller_clone, &client_clone, &QoS::ExactlyOnce);
                 }
                 _ => {
-                    warn!("Received message on unknown topic: {}", topic);
+                    warn!("Received message on unknown topic: {:?}", topic);
                 }
             }
         },

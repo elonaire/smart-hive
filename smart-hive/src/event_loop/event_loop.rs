@@ -25,10 +25,10 @@ where
                     match event.payload() {
                         EventPayload::Received { topic, data, .. } => {
                             if let Ok(payload) = std::str::from_utf8(data) {
-                                info!("[{}] Received: {}", topic, payload);
+                                info!("[{:?}] Received: {}", topic, payload);
                                 on_message(topic, payload);
                             } else {
-                                warn!("Received non-UTF8 payload on topic: {}", topic);
+                                warn!("Received non-UTF8 payload on topic: {:?}", topic);
                             }
                         }
                         EventPayload::Connected(_) => {
