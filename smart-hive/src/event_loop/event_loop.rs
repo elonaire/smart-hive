@@ -13,13 +13,13 @@ pub fn create_event_loop<F>(
     mut on_message: F,
 ) -> Result<(), EspError>
 where
-    F: FnMut(Option<&str>, &str) + Send + 'static,
+    F: FnMut(&str, &str) + Send + 'static,  // (topic, payload)
 {
     std::thread::scope(|s| {
         info!("About to start the MQTT client");
 
         std::thread::Builder::new()
-            .stack_size(8192)  // Increased stack size
+            .stack_size(8192)
             .spawn_scoped(s, move || {
                 info!("MQTT Listening for messages");
 
@@ -27,8 +27,12 @@ where
                     match event.payload() {
                         EventPayload::Received { topic, data, .. } => {
                             if let Ok(payload) = std::str::from_utf8(data) {
-                                info!("[{:?}] Received: {}", topic, payload);
-                                on_message(topic, payload);
+                                if let Some(topic_str) = topic {
+                                    info!("[{}] Received: {}", topic_str, payload);
+                                    on_message(topic_str, payload);
+                                } else {
+                                    warn!("Received message with no topic");
+                                }
                             } else {
                                 warn!("Received non-UTF8 payload on topic: {:?}", topic);
                             }
@@ -56,7 +60,7 @@ where
 
             for mqtt_topic in mqtt_topics {
                 if let Err(e) = client.subscribe(mqtt_topic.topic, mqtt_topic.qos) {
-                    error!("Failed to subscribe to topic \"{:?}\": {:?}, retrying...", mqtt_topic.topic, e);
+                    error!("Failed to subscribe to topic \"{}\": {:?}, retrying...", mqtt_topic.topic, e);
                     all_subscribed = false;
                     std::thread::sleep(Duration::from_millis(500));
                     break;
@@ -65,7 +69,7 @@ where
 
             if all_subscribed {
                 for mqtt_topic in mqtt_topics {
-                    info!("Subscribed to topic \"{:?}\"", mqtt_topic.topic);
+                    info!("Subscribed to topic \"{}\"", mqtt_topic.topic);
                 }
                 std::thread::sleep(Duration::from_millis(500));
 

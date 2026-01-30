@@ -96,6 +96,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Wokwi](https://wokwi.com/)
 - [RustRover](https://www.jetbrains.com/rust/)
 
+## Inspiration
+[Flow Hive](https://www.honeyflow.com/)
+
+My late grandpa (JJ) the best beekeeper I have ever known.
+
 ## Authors ✍🏽
 - [Elon Aseneka Idiong'o](https://github.com/elonaire)
 
