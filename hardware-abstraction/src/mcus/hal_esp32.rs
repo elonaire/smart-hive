@@ -3,6 +3,17 @@ use esp_idf_hal::gpio::{PinDriver, Input, Output, Gpio19, Gpio21, Gpio34, Gpio35
 use esp_idf_hal::ledc::LedcDriver;
 use software_defined_hive::state::actuators::{HoneyCellDisplacerCommand, HoneyCellDisplacer, HoneyCellDisplacerFault};
 
+/// This describes the actuator(honey cell displacer) in terms of software
+///
+/// `pwm` controls motor speed i.e. the speed in which the honey cell displacers will move up and down
+///
+/// `dir_a` is a direction in which the motor moves
+///
+/// `dir_b` is the alternate direction i.e. when `dir_b = 0` if and only if `dir_a = 1` and vice versa
+///
+/// `limit_top` and `limit_bottom` define physical bounds of honey cell displacers - very essential for homing
+///
+/// `max_move_duration` time limit for the traveling of honey cell displacers
 pub struct Esp32Actuator<'actuator_lifetime> {
     pwm: LedcDriver<'actuator_lifetime>,
     dir_a: PinDriver<'actuator_lifetime, Gpio19, Output>,
