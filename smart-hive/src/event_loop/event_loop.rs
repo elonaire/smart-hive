@@ -5,11 +5,15 @@ use esp_idf_svc::sys::EspError;
 
 use log::*;
 
-pub fn create_event_loop(
+pub fn create_event_loop<F>(
     client: &mut EspMqttClient<'_>,
     connection: &mut EspMqttConnection,
     topic: &str,
-) -> Result<(), EspError> {
+    mut on_message: F,
+) -> Result<(), EspError>
+where
+    F: FnMut(&str) + Send + 'static,
+{
     std::thread::scope(|s| {
         info!("About to start the MQTT client");
 
@@ -19,7 +23,23 @@ pub fn create_event_loop(
                 info!("MQTT Listening for messages");
 
                 while let Ok(event) = connection.next() {
-                    info!("[Queue] Event: {}", event.payload());
+                    match event.payload() {
+                        EventPayload::Received { data, .. } => {
+                            if let Ok(payload) = std::str::from_utf8(data) {
+                                info!("[Queue] Received: {}", payload);
+                                on_message(payload);
+                            } else {
+                                warn!("Received non-UTF8 payload");
+                            }
+                        }
+                        EventPayload::Connected(_) => {
+                            info!("MQTT Connected");
+                        }
+                        EventPayload::Disconnected => {
+                            warn!("MQTT Disconnected");
+                        }
+                        _ => {}
+                    }
                 }
 
                 info!("Connection closed");
@@ -29,29 +49,16 @@ pub fn create_event_loop(
         loop {
             if let Err(e) = client.subscribe(topic, QoS::AtMostOnce) {
                 error!("Failed to subscribe to topic \"{topic}\": {e}, retrying...");
-
-                // Re-try in 0.5s
                 std::thread::sleep(Duration::from_millis(500));
-
                 continue;
             }
 
             info!("Subscribed to topic \"{topic}\"");
-
-            // Just to give a chance of our connection to get even the first published message
             std::thread::sleep(Duration::from_millis(500));
 
-            let payload = "Hello from esp-mqtt-demo!";
-
+            // Keep the main thread alive
             loop {
-                client.enqueue(topic, QoS::AtMostOnce, false, payload.as_bytes())?;
-
-                info!("Published \"{payload}\" to topic \"{topic}\"");
-
-                let sleep_secs = 2;
-
-                info!("Now sleeping for {sleep_secs}s...");
-                std::thread::sleep(Duration::from_secs(sleep_secs));
+                std::thread::sleep(Duration::from_secs(60));
             }
         }
     })

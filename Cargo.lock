@@ -1227,12 +1227,17 @@ dependencies = [
  "esp-idf-svc",
  "hardware-abstraction",
  "log",
+ "serde_json",
  "software-defined-hive",
 ]
 
 [[package]]
 name = "software-defined-hive"
 version = "0.2.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "stable_deref_trait"
