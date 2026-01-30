@@ -66,10 +66,11 @@ where
                 }
                 std::thread::sleep(Duration::from_millis(500));
 
-                // Inner loop: Keep the main thread alive
-                loop {
-                    std::thread::sleep(Duration::from_secs(60));
-                }
+
+            }
+            // Inner loop: Keep the main thread alive
+            loop {
+                std::thread::sleep(Duration::from_secs(60));
             }
         }
     })
