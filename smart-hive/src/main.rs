@@ -22,6 +22,13 @@ use crate::wi_fi::wi_fi::wifi_create;
 use log::*;
 use software_defined_hive::controller::controller::{HiveCommand, HiveController};
 use software_defined_hive::state::policy::harvest::HarvestPolicyConfigs;
+use crate::event_loop::handlers::{handle_command, handle_sensor_reading};
+
+#[derive(Debug)]
+struct MqttTopic<'a> {
+    topic: &'a str,
+    qos: QoS,
+}
 
 const MQTT_BROKER_URL: &str = env!("MQTT_BROKER_URL");
 const MQTT_CLIENT_ID: &str = env!("MQTT_CLIENT_ID");
@@ -76,6 +83,7 @@ fn main() {
     // Create HiveController with default or loaded policy
     let policy = HarvestPolicyConfigs::default();
 
+    // Arc<Mutex> for thread safety
     let controller = Arc::new(Mutex::new(
         HiveController::new(policy, actuator)
     ));
@@ -96,56 +104,37 @@ fn main() {
     let client = Arc::new(Mutex::new(client));
     let client_clone = Arc::clone(&client);
 
-    // Create event loop with message handler
+    // Create event loop with message handler. (Using MutexGuard to prevent data races)
     let mut mqtt_client = client.lock().unwrap();
 
+    // Subscribe to multiple topics
+    let topics: Vec<MqttTopic> = vec![
+        MqttTopic { topic: "smart-hive/commands", qos: QoS::AtMostOnce },
+        MqttTopic { topic: "sensors/weight", qos: QoS::AtMostOnce },
+    ];
+
+    for topic in &topics {
+        mqtt_client.subscribe(topic.topic, topic.qos).unwrap();
+        info!("Subscribed to topic: {}", topic);
+    }
+
+
+    // Create event loop with message router
     create_event_loop(
         &mut mqtt_client,
         &mut conn,
-        "smart-hive/commands",
-        move |payload| {
-            // Try to parse as JSON command
-            match serde_json::from_str::<HiveCommand>(payload) {
-                Ok(command) => {
-                    info!("Received command: {:?}", command);
-
-                    let mut ctrl = controller_clone.lock().unwrap();
-                    match ctrl.process_command(command) {
-                        Ok(response) => {
-                            info!("Command processed successfully. New state: {:?}", ctrl.state());
-
-                            // Publish response if there is one
-                            if let Some(resp) = response {
-                                let mut client = client_clone.lock().unwrap();
-                                if let Err(e) = client.enqueue(
-                                    "smart-hive/responses",
-                                    QoS::AtLeastOnce,
-                                    false,
-                                    resp.as_bytes()
-                                ) {
-                                    error!("Failed to publish response: {}", e);
-                                }
-                            }
-                        }
-                        Err(e) => {
-                            error!("Command failed: {}", e);
-
-                            // Publish error response
-                            let error_response = format!(r#"{{"status":"error","message":"{}"}}"#, e);
-                            let mut client = client_clone.lock().unwrap();
-                            if let Err(e) = client.enqueue(
-                                "smart-hive/responses",
-                                QoS::AtLeastOnce,
-                                false,
-                                error_response.as_bytes()
-                            ) {
-                                error!("Failed to publish error response: {}", e);
-                            }
-                        }
-                    }
+        move |topic, payload| {
+            match topic {
+                Some("smart-hive/commands") => {
+                    // Exactly once because we need precision with the hive functionality
+                    handle_command(payload, &controller_clone, &client_clone, &QoS::AtMostOnce);
                 }
-                Err(e) => {
-                    error!("Failed to parse command: {}", e);
+                Some("smart-hive/sensors/weight") => {
+                    // Our sensors can fire and forget, they will be publishing periodically, so no harm if we lose a packet or two
+                    handle_sensor_reading(payload, &controller_clone, &client_clone, &QoS::ExactlyOnce);
+                }
+                _ => {
+                    warn!("Received message on unknown topic: {}", topic);
                 }
             }
         },

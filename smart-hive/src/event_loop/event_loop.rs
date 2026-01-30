@@ -8,14 +8,13 @@ use log::*;
 pub fn create_event_loop<F>(
     client: &mut EspMqttClient<'_>,
     connection: &mut EspMqttConnection,
-    topic: &str,
     mut on_message: F,
 ) -> Result<(), EspError>
 where
-    F: FnMut(&str) + Send + 'static,
+    F: FnMut(Option<&str>, &str) + Send + 'static,  // (topic, payload)
 {
     std::thread::scope(|s| {
-        info!("About to start the MQTT client");
+        info!("Starting the MQTT client!");
 
         std::thread::Builder::new()
             .stack_size(6000)
@@ -24,12 +23,12 @@ where
 
                 while let Ok(event) = connection.next() {
                     match event.payload() {
-                        EventPayload::Received { data, .. } => {
+                        EventPayload::Received { topic, data, .. } => {
                             if let Ok(payload) = std::str::from_utf8(data) {
-                                info!("[Queue] Received: {}", payload);
-                                on_message(payload);
+                                info!("[{}] Received: {}", topic, payload);
+                                on_message(topic, payload);
                             } else {
-                                warn!("Received non-UTF8 payload");
+                                warn!("Received non-UTF8 payload on topic: {}", topic);
                             }
                         }
                         EventPayload::Connected(_) => {
@@ -46,20 +45,9 @@ where
             })
             .unwrap();
 
+        // Keep main thread alive
         loop {
-            if let Err(e) = client.subscribe(topic, QoS::AtMostOnce) {
-                error!("Failed to subscribe to topic \"{topic}\": {e}, retrying...");
-                std::thread::sleep(Duration::from_millis(500));
-                continue;
-            }
-
-            info!("Subscribed to topic \"{topic}\"");
-            std::thread::sleep(Duration::from_millis(500));
-
-            // Keep the main thread alive
-            loop {
-                std::thread::sleep(Duration::from_secs(60));
-            }
+            std::thread::sleep(Duration::from_secs(60));
         }
     })
 }

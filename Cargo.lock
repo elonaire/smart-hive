@@ -1227,6 +1227,7 @@ dependencies = [
  "esp-idf-svc",
  "hardware-abstraction",
  "log",
+ "serde",
  "serde_json",
  "software-defined-hive",
 ]
