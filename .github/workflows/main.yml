@@ -16,6 +16,8 @@ jobs:
       WIFI_PASS: ${{ secrets.WIFI_PASS }}
       MQTT_BROKER_URL: ${{ secrets.MQTT_BROKER_URL }}
       MQTT_CLIENT_ID: ${{ secrets.MQTT_CLIENT_ID }}
+      MQTT_PASSWORD: ${{ secrets.MQTT_PASSWORD }}
+      MQTT_USERNAME: ${{ secrets.MQTT_USERNAME }}
 
     steps:
       - name: Checkout repository
