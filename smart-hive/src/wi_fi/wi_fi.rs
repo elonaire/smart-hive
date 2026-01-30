@@ -1,5 +1,6 @@
 use core::time::Duration;
 
+use esp_idf_hal::modem::Modem;
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::hal::peripherals::Peripherals;
 use esp_idf_svc::mqtt::client::*;
@@ -16,10 +17,11 @@ const WIFI_PASS: &str = env!("WIFI_PASS");
 pub fn wifi_create(
     sys_loop: &EspSystemEventLoop,
     nvs: &EspDefaultNvsPartition,
+    modem: &Modem
 ) -> Result<EspWifi<'static>, EspError> {
-    let peripherals = Peripherals::take()?;
+    // let peripherals = Peripherals::take()?;
 
-    let mut esp_wifi = EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs.clone()))?;
+    let mut esp_wifi = EspWifi::new(modem, sys_loop.clone(), Some(nvs.clone()))?;
     let mut wifi = BlockingWifi::wrap(&mut esp_wifi, sys_loop.clone())?;
 
     wifi.set_configuration(&Configuration::Client(ClientConfiguration {

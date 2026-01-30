@@ -27,27 +27,32 @@ fn main() {
     esp_idf_svc::sys::link_patches();
 
     // Configure and connect to Wi-Fi
-    let peripherals = Peripherals::take().unwrap();
+    let Peripherals {
+        pins,
+        ledc,
+        modem,
+        ..
+    } = Peripherals::take().unwrap();
 
     // Configure PWM / direction / limit switches
     let timer_config = TimerConfig {
         frequency: Hertz::from(5000),
         resolution: Resolution::Bits10,
     };
-    let ledc_timer = LedcTimerDriver::new(peripherals.ledc.timer0, &timer_config).unwrap();
+    let ledc_timer = LedcTimerDriver::new(ledc.timer0, &timer_config).unwrap();
 
     let pwm_channel = LedcDriver::new(
-        peripherals.ledc.channel0,
+        ledc.channel0,
         &ledc_timer,
-        peripherals.pins.gpio18,
+        pins.gpio18,
     )
     .unwrap();
 
-    let dir_a = PinDriver::output(peripherals.pins.gpio19).unwrap();
-    let dir_b = PinDriver::output(peripherals.pins.gpio21).unwrap();
+    let dir_a = PinDriver::output(pins.gpio19).unwrap();
+    let dir_b = PinDriver::output(pins.gpio21).unwrap();
 
-    let limit_top = PinDriver::input(peripherals.pins.gpio34).unwrap();
-    let limit_bottom = PinDriver::input(peripherals.pins.gpio35).unwrap();
+    let limit_top = PinDriver::input(pins.gpio34).unwrap();
+    let limit_bottom = PinDriver::input(pins.gpio35).unwrap();
 
     let mut actuator = Esp32Actuator::new(
         pwm_channel,
@@ -67,7 +72,7 @@ fn main() {
     let sys_loop = EspSystemEventLoop::take().unwrap();
     let nvs = EspDefaultNvsPartition::take().unwrap();
 
-    let _wifi = wifi_create(&sys_loop, &nvs).unwrap();
+    let _wifi = wifi_create(&sys_loop, &nvs, &modem).unwrap();
 
     let (mut client, mut conn) = mqtt_create(MQTT_BROKER_URL, MQTT_CLIENT_ID).unwrap();
 
