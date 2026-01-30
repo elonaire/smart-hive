@@ -105,15 +105,32 @@ fn main() {
     let mut mqtt_client = client.lock().unwrap();
 
     // Subscribe to multiple topics
-    let topics: Vec<MqttTopic> = vec![
+    let mqtt_topics: Vec<MqttTopic> = vec![
         MqttTopic { topic: "smart-hive/commands", qos: QoS::AtMostOnce },
         MqttTopic { topic: "smart-hive/sensors/weight", qos: QoS::AtMostOnce },
     ];
 
-    for topic in &topics {
-        mqtt_client.subscribe(topic.topic, topic.qos).unwrap();
-        info!("Subscribed to topic: {:?}", topic);
+    loop {
+        let mut all_subscribed = true;
+
+        for mqtt_topic in &mqtt_topics {
+            if let Err(e) = mqtt_client.subscribe(mqtt_topic.topic, mqtt_topic.qos) {
+                error!("Failed to subscribe to \"{:?}\": {:?}, retrying...", mqtt_topic.topic, e);
+                all_subscribed = false;
+                std::thread::sleep(Duration::from_millis(500));
+                break; // Break inner loop to retry from the beginning
+            }
+        }
+
+        if all_subscribed {
+            for mqtt_topic in &mqtt_topics {
+                info!("Subscribed to topic: {:?}", mqtt_topic);
+            }
+            std::thread::sleep(Duration::from_millis(500));
+            break; // Exit outer loop when all topics are subscribed
+        }
     }
+
 
 
     // Create event loop with message router
