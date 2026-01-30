@@ -74,7 +74,7 @@ fn main() {
 
     let _wifi = wifi_create(&sys_loop, &nvs, modem).unwrap();
 
-    let (mut client, mut conn) = mqtt_create(MQTT_BROKER_URL, MQTT_CLIENT_ID).unwrap();
+    let (mut client, mut conn) = mqtt_create("mqtt://host.wokwi.internal:1883", "smart-hive").unwrap();
 
     create_event_loop(&mut client, &mut conn, "smart-hive/start-harvest").unwrap();
 }
