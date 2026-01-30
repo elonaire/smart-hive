@@ -53,7 +53,7 @@ where
 
             for mqtt_topic in mqtt_topics {
                 if let Err(e) = client.subscribe(mqtt_topic.topic, mqtt_topic.qos) {
-                    error!("Failed to subscribe to topic \"{mqtt_topic.topic}\": {e}, retrying...");
+                    error!("Failed to subscribe to topic \"{:?}\": {:?}, retrying...", mqtt_topic.topic, e);
                     all_subscribed = false;
                     std::thread::sleep(Duration::from_millis(500));
                     break;
@@ -62,7 +62,7 @@ where
 
             if all_subscribed {
                 for mqtt_topic in mqtt_topics {
-                    info!("Subscribed to topic \"{mqtt_topic.topic}\"");
+                    info!("Subscribed to topic \"{:?}\"", mqtt_topic.topic);
                 }
                 std::thread::sleep(Duration::from_millis(500));
 
