@@ -64,7 +64,7 @@ where
                 for mqtt_topic in mqtt_topics {
                     info!("Subscribed to topic \"{:?}\"", mqtt_topic.topic);
                 }
-                std::thread::sleep(Duration::from_millis(500));
+                // std::thread::sleep(Duration::from_millis(500));
 
 
             }
