@@ -17,7 +17,7 @@ const WIFI_PASS: &str = env!("WIFI_PASS");
 pub fn wifi_create(
     sys_loop: &EspSystemEventLoop,
     nvs: &EspDefaultNvsPartition,
-    modem: &Modem
+    modem: Modem
 ) -> Result<EspWifi<'static>, EspError> {
     // let peripherals = Peripherals::take()?;
 

@@ -72,7 +72,7 @@ fn main() {
     let sys_loop = EspSystemEventLoop::take().unwrap();
     let nvs = EspDefaultNvsPartition::take().unwrap();
 
-    let _wifi = wifi_create(&sys_loop, &nvs, &modem).unwrap();
+    let _wifi = wifi_create(&sys_loop, &nvs, modem).unwrap();
 
     let (mut client, mut conn) = mqtt_create(MQTT_BROKER_URL, MQTT_CLIENT_ID).unwrap();
 
