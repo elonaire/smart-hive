@@ -118,11 +118,11 @@ fn main() {
         move |topic, payload| {
             match topic {
                 "smart-hive/commands" => {
-                    handle_command(payload, &controller_clone, &client_clone, &QoS::AtLeastOnce);
+                    handle_command(payload, &controller_clone, &client_clone, QoS::AtLeastOnce);
                 }
                 "smart-hive/sensors/weight" => {
                     // Our sensors can fire and forget, they will be publishing periodically, so no harm if we lose a packet or two
-                    handle_sensor_reading(payload, &controller_clone, &client_clone, &QoS::AtLeastOnce);
+                    handle_sensor_reading(payload, &controller_clone, &client_clone, QoS::AtLeastOnce);
                 }
                 _ => {
                     warn!("Received message on unknown topic: {:?}", topic);

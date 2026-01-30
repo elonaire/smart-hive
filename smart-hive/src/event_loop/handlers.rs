@@ -13,7 +13,7 @@ pub fn handle_command<H: HoneyCellDisplacer>(
     payload: &str,
     controller: &Arc<Mutex<HiveController<H>>>,
     client: &Arc<Mutex<EspMqttClient<'_>>>,
-    qos: &QoS,
+    qos: QoS,
 ) {
     match serde_json::from_str::<HiveCommand>(payload) {
         Ok(command) => {
@@ -32,7 +32,7 @@ pub fn handle_command<H: HoneyCellDisplacer>(
                     error!("Command failed: {}", e);
 
                     let error_response = format!(r#"{{"status":"error","message":"{}"}}"#, e);
-                    publish_message(client, "smart-hive/responses", &error_response, &QoS::AtLeastOnce); // AtLeastOnce because duplicates won't hurt - it's just an error message
+                    publish_message(client, "smart-hive/responses", &error_response, QoS::AtLeastOnce); // AtLeastOnce because duplicates won't hurt - it's just an error message
                 }
             }
         }
@@ -48,7 +48,7 @@ pub fn handle_sensor_reading<H: HoneyCellDisplacer>(
     payload: &str,
     controller: &Arc<Mutex<HiveController<H>>>,
     client: &Arc<Mutex<EspMqttClient<'_>>>,
-    qos: &QoS,
+    qos: QoS,
 ) {
     match serde_json::from_str::<SensorReadings>(payload) {
         Ok(reading) => {
@@ -87,7 +87,7 @@ pub fn handle_sensor_reading<H: HoneyCellDisplacer>(
                     };
 
                     if let Ok(json) = serde_json::to_string(&ready_notification) {
-                        publish_message(client, "smart-hive/notifications/harvest-ready", &json, &QoS::AtLeastOnce); // AtLeastOnce because duplicates won't hurt - it's just an error message
+                        publish_message(client, "smart-hive/notifications/harvest-ready", &json, QoS::AtLeastOnce); // AtLeastOnce because duplicates won't hurt - it's just an error message
                     }
                 }
             }
@@ -104,7 +104,7 @@ fn publish_message(
     client: &Arc<Mutex<EspMqttClient<'_>>>,
     topic: &str,
     message: &str,
-    qos: &QoS,
+    qos: QoS,
 ) {
     let mut mqtt_client = client.lock().unwrap();
     if let Err(e) = mqtt_client.enqueue(

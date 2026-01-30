@@ -75,7 +75,7 @@ where
 
                 // Inner loop: Keep the main thread alive
                 loop {
-                    std::thread::sleep(Duration::from_secs(60));
+                    std::thread::sleep(Duration::from_millis(500));
                 }
             }
         }
