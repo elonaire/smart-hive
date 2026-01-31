@@ -1,3 +1,4 @@
+use std::time::Duration;
 use esp_idf_svc::mqtt::client::*;
 use esp_idf_svc::sys::EspError;
 
@@ -13,6 +14,8 @@ pub fn mqtt_create(
             client_id: Some(client_id),
             username,
             password,
+            keep_alive_interval: Some(Duration::from_secs(30)),
+            disable_clean_session: false,
             ..Default::default()
         },
     )?;
