@@ -13,7 +13,7 @@ pub fn handle_command<H: HoneyCellDisplacer>(
     payload: &str,
     controller: &Arc<Mutex<HiveController<H>>>,
     client: &Arc<Mutex<EspMqttClient<'_>>>,
-    qos: QoS,
+    qos: &QoS,
 ) {
     match serde_json::from_str::<HiveCommand>(payload) {
         Ok(command) => {
@@ -48,7 +48,7 @@ pub fn handle_sensor_reading<H: HoneyCellDisplacer>(
     payload: &str,
     controller: &Arc<Mutex<HiveController<H>>>,
     client: &Arc<Mutex<EspMqttClient<'_>>>,
-    qos: QoS,
+    qos: &QoS,
 ) {
     match serde_json::from_str::<SensorReadings>(payload) {
         Ok(reading) => {
@@ -104,7 +104,7 @@ fn publish_message(
     client: &Arc<Mutex<EspMqttClient<'_>>>,
     topic: &str,
     message: &str,
-    qos: QoS,
+    qos: &QoS,
 ) {
     let mut mqtt_client = client.lock().unwrap();
     if let Err(e) = mqtt_client.enqueue(
