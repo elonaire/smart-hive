@@ -56,7 +56,7 @@ pub fn handle_sensor_reading<H: HoneyCellDisplacer>(
             let previous_state = ctrl.state();
 
             // Update controller with sensor reading
-            ctrl.update(reading, false);
+            ctrl.update(reading);
 
             let new_state = ctrl.state();
 

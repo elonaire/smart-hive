@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use log::info;
+
 use crate::state::policy::harvest::HarvestPolicyConfigs;
 use crate::state::actuators::{HoneyCellDisplacer, HoneyCellDisplacerCommand};
 use crate::state::hive::HiveState;
@@ -15,6 +16,9 @@ pub struct HiveController<H: HoneyCellDisplacer> {
     last_weight_g: Option<u32>,
     stable_since: Option<u64>,
     drain_started_at: Option<u64>,
+
+    // Latched intent
+    authorized: bool,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -65,7 +69,6 @@ pub struct PolicyUpdateResponse {
     pub policy: HarvestPolicyConfigs,
 }
 
-
 impl<H: HoneyCellDisplacer> HiveController<H> {
     pub fn new(policy: HarvestPolicyConfigs, honey_cell_displacer: H) -> Self {
         Self {
@@ -75,14 +78,20 @@ impl<H: HoneyCellDisplacer> HiveController<H> {
             last_weight_g: None,
             stable_since: None,
             drain_started_at: None,
+            authorized: false,
         }
     }
 
-    pub fn update(&mut self, reading: SensorReadings, authorized: bool) {
+    // SENSOR UPDATE (DRIVES FSM)
+
+    pub fn update(&mut self, reading: SensorReadings) {
         match self.state {
             HiveState::Monitoring => {
+                self.last_weight_g = Some(reading.weight_g);
+
                 if reading.weight_g >= self.policy.min_honey_weight_g {
                     self.state = HiveState::Candidate;
+                    self.stable_since = None;
                 }
             }
 
@@ -91,7 +100,8 @@ impl<H: HoneyCellDisplacer> HiveController<H> {
                     let delta = last.abs_diff(reading.weight_g);
 
                     if delta <= self.policy.stable_delta_g {
-                        self.stable_since.get_or_insert(reading.timestamp_s);
+                        self.stable_since
+                            .get_or_insert(reading.timestamp_s);
 
                         if reading.timestamp_s
                             - self.stable_since.unwrap()
@@ -106,47 +116,31 @@ impl<H: HoneyCellDisplacer> HiveController<H> {
             }
 
             HiveState::Ready => {
-                if authorized {
-                    self.state = HiveState::Authorized;
-                }
-            }
-
-            HiveState::Authorized => {
-                if self.honey_cell_displacer.execute(HoneyCellDisplacerCommand::SlideDown).is_ok() {
-                    self.drain_started_at = Some(reading.timestamp_s);
-                    self.state = HiveState::Draining;
-                } else {
-                    self.state = HiveState::Fault;
+                if self.authorized {
+                    self.authorized = false;
+                    self.enter_authorized(reading.timestamp_s);
                 }
             }
 
             HiveState::Draining => {
-                if reading.timestamp_s - self.drain_started_at.unwrap()
+                if reading.timestamp_s
+                    - self.drain_started_at.unwrap()
                     >= self.policy.max_drain_time_s
                 {
-                    self.state = HiveState::Closing;
-                }
-            }
-
-            HiveState::Closing => {
-                if self.honey_cell_displacer.execute(HoneyCellDisplacerCommand::SlideUp).is_ok() {
-                    self.state = HiveState::Verifying;
-                } else {
-                    self.state = HiveState::Fault;
+                    self.enter_closing();
                 }
             }
 
             HiveState::Verifying => {
-                // Weight reduction confirms harvest
                 if let Some(last) = self.last_weight_g {
                     if reading.weight_g < last {
-                        self.state = HiveState::Monitoring;
+                        self.reset_to_monitoring();
                     }
                 }
             }
 
             HiveState::Fault => {
-                // Require manual reset
+                // Locked until ResetFault
             }
 
             _ => {}
@@ -155,17 +149,14 @@ impl<H: HoneyCellDisplacer> HiveController<H> {
         self.last_weight_g = Some(reading.weight_g);
     }
 
-    pub fn state(&self) -> HiveState {
-        self.state
-    }
+    // COMMAND HANDLING (INTENT)
 
-    /// Process a command received via MQTT
     pub fn process_command(&mut self, command: HiveCommand) -> Result<Option<String>, String> {
         match command {
             HiveCommand::AuthorizeHarvest => {
                 if self.state == HiveState::Ready {
-                    self.state = HiveState::Authorized;
-                    info!("The honey is being harvested!");
+                    self.authorized = true;
+                    info!("Harvest authorized");
                     Ok(None)
                 } else {
                     Err(format!("Cannot authorize harvest in state {:?}", self.state))
@@ -173,9 +164,8 @@ impl<H: HoneyCellDisplacer> HiveController<H> {
             }
 
             HiveCommand::CancelHarvest => {
-                if matches!(self.state, HiveState::Ready | HiveState::Authorized) {
-                    self.state = HiveState::Monitoring;
-                    self.reset_internal_state();
+                if matches!(self.state, HiveState::Ready | HiveState::Draining) {
+                    self.reset_to_monitoring();
                     Ok(None)
                 } else {
                     Err(format!("Cannot cancel harvest in state {:?}", self.state))
@@ -183,15 +173,15 @@ impl<H: HoneyCellDisplacer> HiveController<H> {
             }
 
             HiveCommand::EmergencyStop => {
-                let _ = self.honey_cell_displacer.execute(HoneyCellDisplacerCommand::Stop);
+                let _ = self.honey_cell_displacer
+                    .execute(HoneyCellDisplacerCommand::Stop);
                 self.state = HiveState::Fault;
                 Ok(None)
             }
 
             HiveCommand::ResetFault => {
                 if self.state == HiveState::Fault {
-                    self.state = HiveState::Monitoring;
-                    self.reset_internal_state();
+                    self.reset_to_monitoring();
                     Ok(None)
                 } else {
                     Err(format!("Not in fault state, current state: {:?}", self.state))
@@ -216,56 +206,58 @@ impl<H: HoneyCellDisplacer> HiveController<H> {
                 self.validate_policy(&policy)?;
                 self.policy = policy.clone();
 
-                // Return confirmation with new policy
-                let response = serde_json::to_string(&PolicyUpdateResponse {
-                    status: "success".to_string(),
-                    policy,
-                }).map_err(|e| format!("Failed to serialize response: {}", e))?;
-
-                Ok(Some(response))
+                Ok(Some(
+                    serde_json::to_string(&PolicyUpdateResponse {
+                        status: "success".into(),
+                        policy,
+                    }).map_err(|e| e.to_string())?
+                ))
             }
 
             HiveCommand::GetPolicy => {
-                let response = serde_json::to_string(&self.policy)
-                    .map_err(|e| format!("Failed to serialize policy: {}", e))?;
-                Ok(Some(response))
+                Ok(Some(serde_json::to_string(&self.policy).unwrap()))
             }
 
             HiveCommand::GetStatus => {
-                let status = self.get_status();
-                let response = serde_json::to_string(&status)
-                    .map_err(|e| format!("Failed to serialize status: {}", e))?;
-                Ok(Some(response))
+                Ok(Some(serde_json::to_string(&self.get_status()).unwrap()))
             }
         }
     }
 
-    /// Validate policy configurations before applying
-    fn validate_policy(&self, policy: &HarvestPolicyConfigs) -> Result<(), String> {
-        if policy.min_honey_weight_g == 0 {
-            return Err("min_honey_weight_g must be greater than 0".to_string());
+
+    // STATE ENTRY ACTIONS
+
+    fn enter_authorized(&mut self, now: u64) {
+        match self.honey_cell_displacer.execute(HoneyCellDisplacerCommand::SlideDown) {
+            Ok(_) => {
+                self.drain_started_at = Some(now);
+                self.state = HiveState::Draining;
+            }
+            Err(_) => self.state = HiveState::Fault,
         }
-        if policy.stable_delta_g == 0 {
-            return Err("stable_delta_g must be greater than 0".to_string());
-        }
-        if policy.stability_window_s == 0 {
-            return Err("stability_window_s must be greater than 0".to_string());
-        }
-        if policy.max_drain_time_s == 0 {
-            return Err("max_drain_time_s must be greater than 0".to_string());
-        }
-        if policy.max_drain_time_s > 3600 {
-            return Err("max_drain_time_s cannot exceed 1 hour (3600s)".to_string());
-        }
-        Ok(())
     }
 
-    /// Get current policy
-    pub fn get_policy(&self) -> &HarvestPolicyConfigs {
-        &self.policy
+    fn enter_closing(&mut self) {
+        match self.honey_cell_displacer.execute(HoneyCellDisplacerCommand::SlideUp) {
+            Ok(_) => self.state = HiveState::Verifying,
+            Err(_) => self.state = HiveState::Fault,
+        }
     }
 
-    /// Get current state for status reporting
+    fn reset_to_monitoring(&mut self) {
+        self.state = HiveState::Monitoring;
+        self.authorized = false;
+        self.stable_since = None;
+        self.drain_started_at = None;
+    }
+
+
+    // STATUS / POLICY
+
+    pub fn state(&self) -> HiveState {
+        self.state
+    }
+
     pub fn get_status(&self) -> HiveStatus {
         HiveStatus {
             state: self.state,
@@ -276,9 +268,15 @@ impl<H: HoneyCellDisplacer> HiveController<H> {
         }
     }
 
-    fn reset_internal_state(&mut self) {
-        self.stable_since = None;
-        self.drain_started_at = None;
+    fn validate_policy(&self, policy: &HarvestPolicyConfigs) -> Result<(), String> {
+        if policy.min_honey_weight_g == 0
+            || policy.stable_delta_g == 0
+            || policy.stability_window_s == 0
+            || policy.max_drain_time_s == 0
+            || policy.max_drain_time_s > 3600
+        {
+            return Err("Invalid policy configuration".into());
+        }
+        Ok(())
     }
 }
-
