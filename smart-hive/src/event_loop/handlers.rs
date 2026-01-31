@@ -32,7 +32,7 @@ pub fn handle_command<H: HoneyCellDisplacer>(
                     error!("Command failed: {}", e);
 
                     let error_response = format!(r#"{{"status":"error","message":"{}"}}"#, e);
-                    publish_message(client, "smart-hive/responses", &error_response, QoS::AtLeastOnce); // AtLeastOnce because duplicates won't hurt - it's just an error message
+                    publish_message(client, "smart-hive/responses", &error_response, &QoS::AtLeastOnce); // AtLeastOnce because duplicates won't hurt - it's just an error message
                 }
             }
         }
@@ -87,7 +87,7 @@ pub fn handle_sensor_reading<H: HoneyCellDisplacer>(
                     };
 
                     if let Ok(json) = serde_json::to_string(&ready_notification) {
-                        publish_message(client, "smart-hive/notifications/harvest-ready", &json, QoS::AtLeastOnce); // AtLeastOnce because duplicates won't hurt - it's just an error message
+                        publish_message(client, "smart-hive/notifications/harvest-ready", &json, &QoS::AtLeastOnce); // AtLeastOnce because duplicates won't hurt - it's just an error message
                     }
                 }
             }
